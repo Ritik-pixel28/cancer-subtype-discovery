@@ -6,7 +6,7 @@ data:
   processed_dir: "data/processed"
   n_top_genes: 2000
   variance_metric: "mad"
-  log_transform: "log2p1"
+  log_transform: "none"
   batch_check_cols: []
   label_col: "cancer_type"
   sample_id_col: "sample_id"

@@ -11,7 +11,7 @@ class DataConfig(BaseModel):
 
     n_top_genes: int = Field(default=2000, ge=100, le=7129)
     variance_metric: Literal["mad", "variance"] = "mad"
-    log_transform: Literal["log2p1", "log1p"] = "log2p1"
+    log_transform: Literal["none", "log2p1", "log1p"] = "none"
 
     batch_check_cols: List[str] = []
     label_col: str = "cancer_type"
