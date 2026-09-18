@@ -10,7 +10,7 @@ The initial reference dataset is the **Golub et al. leukemia gene-expression dat
 
 ## Overview
 
-The goal of this project is to build a reproducible end-to-end pipeline for discovering and characterizing molecular subgroups from gene-expression data.
+The goal of this project is to build a end-to-end pipeline for discovering and characterizing molecular subgroups from gene-expression data.
 
 The pipeline is designed to:
 
@@ -280,6 +280,11 @@ The current configuration includes a Random Forest surrogate model for this purp
 - [x] Unit tests for data loading and preprocessing
 - [x] PCA implementation
 - [x] Basic PCA unit tests
+- [x] K-Means clustering
+- [x] Hierarchical clustering (Ward linkage)
+- [x] Gaussian Mixture Models
+- [x] Consensus clustering (resampling-based co-clustering matrix)
+- [x] Unit tests for all clustering methods (input validation, reproducibility, output shape)
 
 ### In Progress
 
@@ -289,10 +294,6 @@ The current configuration includes a Random Forest surrogate model for this purp
 
 ### Planned
 
-- [ ] K-Means clustering
-- [ ] Hierarchical clustering
-- [ ] Gaussian Mixture Models
-- [ ] Consensus clustering
 - [ ] Cluster validation
 - [ ] Stability analysis
 - [ ] Biomarker discovery
@@ -314,6 +315,9 @@ cancer-subtype-discovery/
 │   └── raw/                    # Local dataset files (not committed)
 │
 ├── src/
+│   ├── clustering/             # Clustering algorithms (Phase 4)
+│   │   ├── __init__.py
+│   │   └── core.py             # KMeans, Hierarchical, GMM, Consensus
 │   ├── dimensionality/         # PCA and dimensionality reduction
 │   ├── preprocessing/          # Data preprocessing
 │   ├── utils/                  # Reproducibility utilities
@@ -323,6 +327,7 @@ cancer-subtype-discovery/
 │   └── __init__.py
 │
 ├── tests/
+│   ├── test_clustering.py
 │   ├── test_data_loader.py
 │   ├── test_dimensionality.py
 │   └── test_preprocessing.py
@@ -446,7 +451,7 @@ Current test coverage includes:
 A successful run currently reports:
 
 ```text
-9 passed
+54 passed
 ```
 
 Tests are intended to be run before committing changes to the repository.
@@ -535,10 +540,10 @@ The purpose of the current stage is therefore **method development and reproduci
 [x] PCA implementation
 [ ] PCA analysis and visualization
 [ ] UMAP
-[ ] K-Means
-[ ] Hierarchical clustering
-[ ] Gaussian Mixture Models
-[ ] Consensus clustering
+[x] K-Means clustering
+[x] Hierarchical clustering (Ward)
+[x] Gaussian Mixture Models
+[x] Consensus clustering
 [ ] Cluster validation
 [ ] Stability analysis
 [ ] Biomarker discovery
