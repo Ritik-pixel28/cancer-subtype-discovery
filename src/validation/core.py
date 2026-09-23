@@ -1,54 +1,142 @@
 """
-Cluster validation for the Cancer Subtype Discovery pipeline.
+Cluster validation utilities for the Cancer Subtype Discovery pipeline.
 
-This module evaluates whether discovered clusters are well-separated,
-stable under resampling, and consistent in their consensus structure.
-It answers four questions:
-
-  1. How well separated are the clusters? → SilhouetteAnalyzer
-  2. How stable are they under resampling? → BootstrapStability
-  3. How consistent is the consensus structure? → ConsensusValidator
-  4. How do these properties change with k? → ValidationSummary
-
-Important: cancer-type labels (ALL / AML) are NEVER used here.
-All validation is purely unsupervised.
-
-The thresholds used to flag results as "passing" are project-defined
-criteria for stability, not statements about biological correctness.
-
-Classes
--------
-SilhouetteAnalyzer
-    Measures average intra- vs. inter-cluster distance via silhouette score.
-BootstrapStability
-    Measures how consistently samples are co-clustered under resampling,
-    using Adjusted Rand Index (ARI) to compare partitions.
-ConsensusValidator
-    Validates and summarizes a pre-built consensus co-clustering matrix.
-ValidationSummary
-    Combines silhouette and stability results into a single reporting table.
+Known cancer-type labels are used only for external validation.
+They must not be used during clustering or feature selection.
 """
 
 from __future__ import annotations
 
-import logging
-from typing import Callable
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Protocol
 
 import numpy as np
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 
-logger = logging.getLogger(__name__)
+
+class ClustererProtocol(Protocol):
+    """Minimal interface required by bootstrap stability."""
+
+    def fit_predict(self, X: pd.DataFrame) -> pd.Series:
+        ...
 
 
-# ---------------------------------------------------------------------------
-# Shared input guard
-# ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class BootstrapStabilityResult:
+    """Summary of bootstrap cluster stability."""
 
-def _check_feature_matrix(X: pd.DataFrame) -> None:
-    """Raise ValueError if X is not a valid numeric feature matrix."""
+    mean: float
+    ci_lower: float
+    ci_upper: float
+    scores: tuple[float, ...]
+
+
+def compute_ari(
+    reference_labels: pd.Series,
+    cluster_labels: pd.Series,
+) -> float:
+    """
+    Compute Adjusted Rand Index between known labels and discovered clusters.
+
+    Parameters
+    ----------
+    reference_labels:
+        Known reference labels, for example ALL / AML.
+        Index must contain sample IDs.
+
+    cluster_labels:
+        Cluster assignments produced by the clustering stage.
+        Index must contain the same sample IDs.
+
+    Returns
+    -------
+    float
+        Adjusted Rand Index.
+
+    Raises
+    ------
+    ValueError
+        If inputs are empty, contain missing values, have duplicate sample IDs,
+        or do not contain the same samples.
+    """
+
+    if reference_labels.empty or cluster_labels.empty:
+        raise ValueError("Reference labels and cluster labels must not be empty.")
+
+    if not reference_labels.index.is_unique:
+        raise ValueError("Reference labels contain duplicate sample IDs.")
+
+    if not cluster_labels.index.is_unique:
+        raise ValueError("Cluster labels contain duplicate sample IDs.")
+
+    if reference_labels.isna().any():
+        raise ValueError("Reference labels contain missing values.")
+
+    if cluster_labels.isna().any():
+        raise ValueError("Cluster labels contain missing values.")
+
+    if set(reference_labels.index) != set(cluster_labels.index):
+        raise ValueError(
+            "Reference labels and cluster labels must contain the same samples."
+        )
+
+    # Align known labels to the exact order of the clustering output.
+    aligned_reference = reference_labels.reindex(cluster_labels.index)
+
+    return float(
+        adjusted_rand_score(
+            aligned_reference.to_numpy(),
+            cluster_labels.to_numpy(),
+        )
+    )
+
+def compute_silhouette(
+    X: pd.DataFrame,
+    cluster_labels: pd.Series,
+) -> float:
+    """
+    Compute the Silhouette Score for discovered clusters.
+
+    Parameters
+    ----------
+    X:
+        Feature matrix used for clustering, typically PCA output.
+        Rows are samples and columns are features/components.
+
+    cluster_labels:
+        Cluster assignment for each sample.
+        Index must contain the same sample IDs as X.
+
+    Returns
+    -------
+    float
+        Mean Silhouette Score.
+
+    Raises
+    ------
+    ValueError
+        If inputs are invalid, samples do not match, or the number
+        of clusters is not suitable for Silhouette calculation.
+    """
+
     if X.empty:
-        raise ValueError("Feature matrix X is empty.")
+        raise ValueError("Feature matrix must not be empty.")
+
+    if cluster_labels.empty:
+        raise ValueError("Cluster labels must not be empty.")
+
+    if not X.index.is_unique:
+        raise ValueError("Feature matrix contains duplicate sample IDs.")
+
+    if not cluster_labels.index.is_unique:
+        raise ValueError("Cluster labels contain duplicate sample IDs.")
+
+    if set(X.index) != set(cluster_labels.index):
+        raise ValueError(
+            "Feature matrix and cluster labels must contain the same samples."
+        )
 
     non_numeric = X.select_dtypes(exclude="number").columns.tolist()
     if non_numeric:
@@ -58,487 +146,683 @@ def _check_feature_matrix(X: pd.DataFrame) -> None:
         )
 
     if X.isnull().any(axis=None):
-        raise ValueError("Feature matrix contains NaN values.")
+        raise ValueError("Feature matrix contains missing values.")
 
     if not np.isfinite(X.to_numpy()).all():
         raise ValueError("Feature matrix contains infinite values.")
 
+    if cluster_labels.isna().any():
+        raise ValueError("Cluster labels contain missing values.")
 
-def _check_labels(labels: pd.Series, X: pd.DataFrame) -> None:
-    """Raise ValueError for labels that cannot be used for silhouette scoring."""
-    n_unique = labels.nunique()
-    if n_unique < 2:
+    # Align labels to the exact sample order of X.
+    aligned_labels = cluster_labels.reindex(X.index)
+
+    n_samples = len(X)
+    n_clusters = aligned_labels.nunique()
+
+    if n_clusters < 2:
         raise ValueError(
-            f"Silhouette score requires at least 2 distinct clusters; "
-            f"got {n_unique}."
+            "Silhouette Score requires at least 2 clusters."
         )
-    if n_unique == len(X):
+
+    if n_clusters >= n_samples:
         raise ValueError(
-            "Every sample is in its own cluster; silhouette score is undefined."
+            "Silhouette Score requires fewer clusters than samples."
         )
 
-
-# ---------------------------------------------------------------------------
-# Silhouette analysis
-# ---------------------------------------------------------------------------
-
-class SilhouetteAnalyzer:
-    """
-    Compute silhouette scores for clustering results.
-
-    The silhouette score measures how similar each sample is to its own
-    cluster compared to the nearest other cluster.  It ranges from −1
-    (wrong cluster) to +1 (tight, well-separated cluster).  A score near
-    0 indicates overlapping clusters.
-
-    sklearn's ``silhouette_score`` is used throughout; no manual formula.
-
-    Parameters
-    ----------
-    metric:
-        Distance metric passed to ``silhouette_score``.  Defaults to
-        ``"euclidean"``, which is appropriate for PCA-reduced data.
-    """
-
-    def __init__(self, metric: str = "euclidean") -> None:
-        self.metric = metric
-
-    def compute(self, X: pd.DataFrame, labels: pd.Series) -> float:
-        """
-        Calculate the mean silhouette score for one clustering solution.
-
-        Parameters
-        ----------
-        X:
-            PCA-reduced feature matrix (samples × components).  Must not
-            contain cancer-type labels.
-        labels:
-            Integer cluster assignments aligned with ``X.index``.
-
-        Returns
-        -------
-        float
-            Mean silhouette coefficient across all samples.
-
-        Raises
-        ------
-        ValueError
-            If X contains NaN / inf, is empty, is non-numeric, has fewer
-            than 2 clusters, or every sample is its own cluster.
-        """
-        _check_feature_matrix(X)
-        _check_labels(labels, X)
-
-        score = silhouette_score(
+    return float(
+        silhouette_score(
             X.to_numpy(),
-            labels.to_numpy(),
-            metric=self.metric,
+            aligned_labels.to_numpy(),
+            metric="euclidean",
         )
-        return float(score)
-
-    def compute_all(
-        self,
-        X: pd.DataFrame,
-        results: dict[tuple[str, int], pd.Series],
-    ) -> pd.DataFrame:
-        """
-        Compute silhouette scores for multiple clustering solutions.
-
-        Parameters
-        ----------
-        X:
-            PCA-reduced feature matrix shared by all solutions.
-        results:
-            Mapping from ``(method_name, k)`` to a ``pd.Series`` of cluster
-            labels (as returned by the Phase-4 clusterers).
-
-        Returns
-        -------
-        pd.DataFrame
-            Columns: ``method``, ``k``, ``silhouette_score``.
-            One row per (method, k) pair.  If a score cannot be computed
-            (e.g. degenerate clustering), the row is omitted and a warning
-            is logged.
-        """
-        rows = []
-        for (method, k), labels in results.items():
-            try:
-                score = self.compute(X, labels)
-                rows.append({"method": method, "k": k, "silhouette_score": score})
-            except ValueError as exc:
-                logger.warning(
-                    "Skipping silhouette for method=%s k=%d: %s", method, k, exc
-                )
-        return pd.DataFrame(rows, columns=["method", "k", "silhouette_score"])
+    )
 
 
-# ---------------------------------------------------------------------------
-# Bootstrap stability
-# ---------------------------------------------------------------------------
-
-class BootstrapStability:
+def _mean_cluster_jaccard(
+    reference_labels: pd.Series,
+    candidate_labels: pd.Series,
+) -> float:
     """
-    Measure clustering stability using repeated sub-sampling and ARI.
+    Compare two clusterings using best-match Jaccard similarity.
 
-    Procedure (per method, per k)
-    ------------------------------
-    1. Cluster the full dataset once to get reference labels.
-    2. Repeat ``n_iter`` times:
-       a. Draw ``floor(sample_frac × n)`` sample indices without replacement.
-       b. Cluster that subset with a fresh clusterer instance.
-       c. Extract the reference labels for those same sample indices.
-       d. Compute ARI between the two label arrays.
-          ARI handles label permutations correctly, so cluster-0 vs
-          cluster-1 flipping does not penalise an otherwise identical
-          partition.
-    3. Return mean and std of the ARI values.
+    Cluster numbers themselves are arbitrary, so cluster 0 in one run
+    does not have to be cluster 0 in another run.
+    """
 
-    Why ARI and not direct label comparison?
-    ----------------------------------------
-    Cluster labels are arbitrary integers.  Run 1 might call a group
-    "cluster 0" and Run 2 might call the same group "cluster 1".  ARI
-    measures partition agreement regardless of how the labels are numbered.
+    reference = reference_labels.reindex(candidate_labels.index)
+
+    scores: list[float] = []
+
+    for reference_cluster in reference.unique():
+        reference_members = set(
+            reference.index[reference == reference_cluster]
+        )
+
+        best_score = 0.0
+
+        for candidate_cluster in candidate_labels.unique():
+            candidate_members = set(
+                candidate_labels.index[
+                    candidate_labels == candidate_cluster
+                ]
+            )
+
+            intersection = len(reference_members & candidate_members)
+            union = len(reference_members | candidate_members)
+
+            if union > 0:
+                score = intersection / union
+                best_score = max(best_score, score)
+
+        scores.append(best_score)
+
+    return float(np.mean(scores))
+
+
+def bootstrap_stability(
+    X: pd.DataFrame,
+    clusterer_factory: Callable[[], ClustererProtocol],
+    n_resamples: int = 100,
+    sample_fraction: float = 0.8,
+    random_state: int = 42,
+) -> BootstrapStabilityResult:
+    """
+    Estimate clustering stability using repeated patient resampling.
 
     Parameters
     ----------
-    n_iter:
-        Number of bootstrap iterations.
-    sample_frac:
-        Fraction of samples to include in each bootstrap draw (without
-        replacement).  Corresponds to ``bootstrap_sample_frac`` in config.
+    X:
+        Feature matrix used for clustering, normally PCA output.
+
+    clusterer_factory:
+        Function that returns a fresh clustering object with a
+        fit_predict() method.
+
+    n_resamples:
+        Number of repeated resampling runs.
+
+    sample_fraction:
+        Fraction of patients used in each resample.
+
     random_state:
-        Master seed; each iteration uses a deterministically derived
-        sub-seed so the full procedure is reproducible.
+        Seed for reproducibility.
+
+    Returns
+    -------
+    BootstrapStabilityResult
+        Mean Jaccard stability, 95% confidence interval,
+        and individual resampling scores.
     """
 
-    def __init__(
-        self,
-        n_iter: int = 100,
-        sample_frac: float = 0.8,
-        random_state: int = 42,
-    ) -> None:
-        if sample_frac <= 0.0 or sample_frac > 1.0:
-            raise ValueError(
-                f"sample_frac must be in (0, 1]; got {sample_frac}."
-            )
-        if n_iter < 1:
-            raise ValueError(f"n_iter must be >= 1; got {n_iter}.")
+    if X.empty:
+        raise ValueError("Feature matrix must not be empty.")
 
-        self.n_iter = n_iter
-        self.sample_frac = sample_frac
-        self.random_state = random_state
+    if not X.index.is_unique:
+        raise ValueError("Feature matrix contains duplicate sample IDs.")
 
-    def compute(
-        self,
-        X: pd.DataFrame,
-        clusterer_factory: Callable[[], object],
-    ) -> dict[str, float]:
-        """
-        Estimate stability for one clustering configuration.
+    non_numeric = X.select_dtypes(exclude="number").columns.tolist()
+    if non_numeric:
+        raise ValueError(
+            f"Feature matrix must be entirely numeric. "
+            f"Non-numeric columns: {non_numeric[:5]}"
+        )
 
-        Parameters
-        ----------
-        X:
-            PCA-reduced feature matrix (samples × components).
-        clusterer_factory:
-            Zero-argument callable that returns a **new** clusterer instance
-            each time it is called.  The returned object must implement
-            ``fit_predict(X: pd.DataFrame) -> pd.Series``.
+    if X.isnull().any(axis=None):
+        raise ValueError("Feature matrix contains missing values.")
 
-            Example::
+    if not np.isfinite(X.to_numpy()).all():
+        raise ValueError("Feature matrix contains infinite values.")
 
-                factory = lambda: KMeansClusterer(n_clusters=3, random_state=42)
+    if n_resamples < 2:
+        raise ValueError("n_resamples must be at least 2.")
 
-        Returns
-        -------
-        dict
-            Keys: ``mean_ari``, ``std_ari``.
-            ARI values live in [−1, 1]; higher is more stable.
+    if not 0 < sample_fraction <= 1:
+        raise ValueError("sample_fraction must be between 0 and 1.")
 
-        Raises
-        ------
-        ValueError
-            If X fails basic validation or has fewer than 4 samples
-            (too small to meaningfully subsample).
-        """
-        _check_feature_matrix(X)
+    # First cluster the complete dataset.
+    baseline_clusterer = clusterer_factory()
+    baseline_labels = baseline_clusterer.fit_predict(X)
 
-        n_samples = len(X)
-        n_sub = max(2, int(np.floor(self.sample_frac * n_samples)))
+    if set(baseline_labels.index) != set(X.index):
+        raise ValueError(
+            "Clusterer output must contain the same samples as X."
+        )
 
-        if n_samples < 4:
-            raise ValueError(
-                f"Bootstrap stability requires at least 4 samples; "
-                f"got {n_samples}."
-            )
+    n_samples = len(X)
 
-        # Reference clustering on the full dataset
-        ref_labels = clusterer_factory().fit_predict(X)
+    sample_size = max(
+        2,
+        int(np.floor(sample_fraction * n_samples)),
+    )
 
-        rng = np.random.default_rng(self.random_state)
-        ari_values: list[float] = []
+    n_baseline_clusters = baseline_labels.nunique()
 
-        for _ in range(self.n_iter):
-            # Draw a subset of samples (positional indices)
-            pos_idx = rng.choice(n_samples, size=n_sub, replace=False)
-            pos_idx_sorted = np.sort(pos_idx)
+    if sample_size < n_baseline_clusters:
+        raise ValueError(
+            "Resample size is smaller than the number of clusters."
+        )
 
-            sub_X = X.iloc[pos_idx_sorted]
+    rng = np.random.default_rng(random_state)
 
-            try:
-                sub_labels = clusterer_factory().fit_predict(sub_X)
-            except ValueError:
-                # Skip iterations where clustering fails (e.g. k > subset size)
-                logger.debug("Bootstrap iteration skipped due to clustering error.")
-                continue
+    scores: list[float] = []
 
-            # Reference labels for the same sample positions
-            ref_sub = ref_labels.iloc[pos_idx_sorted]
+    for _ in range(n_resamples):
+        sample_positions = rng.choice(
+            n_samples,
+            size=sample_size,
+            replace=False,
+        )
 
-            ari = adjusted_rand_score(
-                ref_sub.to_numpy(),
-                sub_labels.to_numpy(),
-            )
-            ari_values.append(ari)
+        X_resampled = X.iloc[sample_positions]
 
-        if not ari_values:
-            # Every iteration failed — return NaN rather than crash
-            return {"mean_ari": float("nan"), "std_ari": float("nan")}
+        clusterer = clusterer_factory()
+        resampled_labels = clusterer.fit_predict(X_resampled)
 
-        return {
-            "mean_ari": float(np.mean(ari_values)),
-            "std_ari": float(np.std(ari_values, ddof=1) if len(ari_values) > 1 else 0.0),
-        }
+        reference_subset = baseline_labels.reindex(
+            X_resampled.index
+        )
 
-    def compute_all(
-        self,
-        X: pd.DataFrame,
-        factory_map: dict[tuple[str, int], Callable[[], object]],
-    ) -> pd.DataFrame:
-        """
-        Compute stability for multiple (method, k) configurations.
+        score = _mean_cluster_jaccard(
+            reference_subset,
+            resampled_labels,
+        )
 
-        Parameters
-        ----------
-        X:
-            PCA-reduced feature matrix.
-        factory_map:
-            Mapping from ``(method_name, k)`` to a zero-argument clusterer
-            factory.
+        scores.append(score)
 
-        Returns
-        -------
-        pd.DataFrame
-            Columns: ``method``, ``k``, ``mean_ari``, ``std_ari``.
-        """
-        rows = []
-        for (method, k), factory in factory_map.items():
-            try:
-                stats = self.compute(X, factory)
-                rows.append(
-                    {
-                        "method": method,
-                        "k": k,
-                        "mean_ari": stats["mean_ari"],
-                        "std_ari": stats["std_ari"],
-                    }
-                )
-            except ValueError as exc:
-                logger.warning(
-                    "Skipping stability for method=%s k=%d: %s", method, k, exc
-                )
-        return pd.DataFrame(rows, columns=["method", "k", "mean_ari", "std_ari"])
+    scores_array = np.asarray(scores, dtype=float)
+
+    return BootstrapStabilityResult(
+        mean=float(scores_array.mean()),
+        ci_lower=float(np.quantile(scores_array, 0.025)),
+        ci_upper=float(np.quantile(scores_array, 0.975)),
+        scores=tuple(float(score) for score in scores_array),
+    )
 
 
-# ---------------------------------------------------------------------------
-# Consensus matrix validation
-# ---------------------------------------------------------------------------
-
-class ConsensusValidator:
+def _within_cluster_dispersion(
+    X: pd.DataFrame,
+    cluster_labels: pd.Series,
+) -> float:
     """
-    Validate and summarize a pre-built consensus co-clustering matrix.
+    Compute total within-cluster squared Euclidean dispersion.
 
-    This class does NOT re-run consensus clustering.  It only inspects
-    the matrix returned by ``ConsensusClusterer.fit_predict()``.
+    Smaller values mean samples are more compact around
+    their cluster centroids.
+    """
 
-    A well-formed consensus matrix ``M`` satisfies:
-    - Square shape (n_samples × n_samples)
-    - Index and columns match the original sample IDs
-    - All values are in [0, 1]
-    - M is symmetric (M[i, j] == M[j, i])
-    - Diagonal entries are all 1.0 (a sample is always co-clustered with itself)
+    aligned_labels = cluster_labels.reindex(X.index)
+
+    total = 0.0
+
+    for cluster_id in aligned_labels.unique():
+        mask = aligned_labels == cluster_id
+        cluster_data = X.loc[mask].to_numpy()
+
+        if len(cluster_data) == 0:
+            continue
+
+        centroid = cluster_data.mean(axis=0)
+
+        squared_distances = np.sum(
+            (cluster_data - centroid) ** 2,
+            axis=1,
+        )
+
+        total += float(squared_distances.sum())
+
+    return total
+
+
+
+def compute_gap_statistic(
+    X: pd.DataFrame,
+    clusterer_factory: Callable[[int], ClustererProtocol],
+    k_values: tuple[int, ...] = (2, 3, 4, 5, 6, 7, 8),
+    n_reference: int = 20,
+    random_state: int = 42,
+) -> pd.DataFrame:
+    """
+    Compute Gap Statistic across candidate numbers of clusters.
 
     Parameters
     ----------
-    high_consensus_threshold:
-        Pairs above this value are considered "consistently co-clustered".
-        Used only in ``summarize``; has no impact on validation checks.
-        Default is 0.8, a commonly used cut-off for tight consensus.
+    X:
+        Feature matrix used for clustering, normally PCA output.
+
+    clusterer_factory:
+        Function receiving k and returning a fresh clusterer.
+
+        Example:
+        lambda k: KMeansClusterer(
+            n_clusters=k,
+            random_state=42,
+        )
+
+    k_values:
+        Candidate numbers of clusters.
+
+    n_reference:
+        Number of random reference datasets generated per k.
+
+    random_state:
+        Seed used to generate reproducible reference datasets.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per candidate k with:
+        - k
+        - log_wk
+        - reference_log_wk_mean
+        - gap
+        - gap_std
     """
 
-    def __init__(self, high_consensus_threshold: float = 0.8) -> None:
-        if not 0.0 <= high_consensus_threshold <= 1.0:
-            raise ValueError(
-                f"high_consensus_threshold must be in [0, 1]; "
-                f"got {high_consensus_threshold}."
+    if X.empty:
+        raise ValueError("Feature matrix must not be empty.")
+
+    if not X.index.is_unique:
+        raise ValueError(
+            "Feature matrix contains duplicate sample IDs."
+        )
+
+    non_numeric = X.select_dtypes(exclude="number").columns.tolist()
+
+    if non_numeric:
+        raise ValueError(
+            f"Feature matrix must be entirely numeric. "
+            f"Non-numeric columns: {non_numeric[:5]}"
+        )
+
+    if X.isnull().any(axis=None):
+        raise ValueError(
+            "Feature matrix contains missing values."
+        )
+
+    if not np.isfinite(X.to_numpy()).all():
+        raise ValueError(
+            "Feature matrix contains infinite values."
+        )
+
+    if not k_values:
+        raise ValueError(
+            "k_values must contain at least one candidate."
+        )
+
+    if any(k < 2 for k in k_values):
+        raise ValueError(
+            "Every k value must be at least 2."
+        )
+
+    if any(k >= len(X) for k in k_values):
+        raise ValueError(
+            "Every k must be smaller than the number of samples."
+        )
+
+    if n_reference < 1:
+        raise ValueError(
+            "n_reference must be at least 1."
+        )
+
+    rng = np.random.default_rng(random_state)
+
+    data = X.to_numpy()
+
+    feature_min = data.min(axis=0)
+    feature_max = data.max(axis=0)
+
+    results: list[dict[str, float | int]] = []
+
+    for k in k_values:
+
+        # ---------------------------------
+        # Real dataset
+        # ---------------------------------
+
+        real_clusterer = clusterer_factory(k)
+        real_labels = real_clusterer.fit_predict(X)
+
+        real_dispersion = _within_cluster_dispersion(
+            X,
+            real_labels,
+        )
+
+        # Avoid log(0)
+        real_dispersion = max(
+            real_dispersion,
+            np.finfo(float).tiny,
+        )
+
+        log_wk = float(np.log(real_dispersion))
+
+        # ---------------------------------
+        # Random reference datasets
+        # ---------------------------------
+
+        reference_logs: list[float] = []
+
+        for _ in range(n_reference):
+
+            reference_array = rng.uniform(
+                low=feature_min,
+                high=feature_max,
+                size=X.shape,
             )
-        self.high_consensus_threshold = high_consensus_threshold
 
-    def validate(self, M: pd.DataFrame) -> dict[str, bool]:
-        """
-        Check structural properties of a consensus matrix.
+            reference_df = pd.DataFrame(
+                reference_array,
+                index=X.index,
+                columns=X.columns,
+            )
 
-        Parameters
-        ----------
-        M:
-            Consensus matrix as returned by ``ConsensusClusterer.fit_predict``.
+            reference_clusterer = clusterer_factory(k)
 
-        Returns
-        -------
-        dict
-            Keys: ``shape_is_square``, ``values_in_unit_interval``,
-            ``is_symmetric``, ``diagonal_is_one``.
-            All values are ``bool``.
-        """
-        arr = M.to_numpy()
-        n_rows, n_cols = arr.shape
+            reference_labels = (
+                reference_clusterer.fit_predict(reference_df)
+            )
 
-        shape_ok = n_rows == n_cols
-        values_ok = bool((arr >= 0.0).all() and (arr <= 1.0).all())
+            reference_dispersion = (
+                _within_cluster_dispersion(
+                    reference_df,
+                    reference_labels,
+                )
+            )
 
-        # Symmetry and diagonal checks only make sense on a square matrix.
-        # np.allclose raises a broadcast error when shapes are incompatible.
-        if shape_ok:
-            symmetric_ok = bool(np.allclose(arr, arr.T, atol=1e-8))
-            diagonal_ok = bool(np.allclose(np.diag(arr), 1.0, atol=1e-8))
-        else:
-            symmetric_ok = False
-            diagonal_ok = False
+            reference_dispersion = max(
+                reference_dispersion,
+                np.finfo(float).tiny,
+            )
 
-        return {
-            "shape_is_square": shape_ok,
-            "values_in_unit_interval": values_ok,
-            "is_symmetric": symmetric_ok,
-            "diagonal_is_one": diagonal_ok,
-        }
+            reference_logs.append(
+                float(np.log(reference_dispersion))
+            )
 
-    def summarize(self, M: pd.DataFrame) -> dict[str, float]:
-        """
-        Compute summary statistics for a consensus matrix.
+        reference_array_logs = np.asarray(
+            reference_logs,
+            dtype=float,
+        )
 
-        Only off-diagonal entries are included (a sample with itself is
-        trivially co-clustered and would inflate the mean).
+        reference_mean = float(
+            reference_array_logs.mean()
+        )
 
-        Statistics reported
-        -------------------
-        - ``mean_consensus``: mean of all off-diagonal entries
-        - ``median_consensus``: median of all off-diagonal entries
-        - ``frac_high_consensus``: fraction of off-diagonal pairs above
-          ``high_consensus_threshold``
+        gap = reference_mean - log_wk
 
-        Parameters
-        ----------
-        M:
-            Consensus matrix.
+        gap_std = float(
+            reference_array_logs.std(ddof=1)
+            if len(reference_array_logs) > 1
+            else 0.0
+        )
 
-        Returns
-        -------
-        dict with float values.
-        """
-        arr = M.to_numpy().astype(float)
-        n = arr.shape[0]
-
-        if n < 2:
-            return {
-                "mean_consensus": float("nan"),
-                "median_consensus": float("nan"),
-                "frac_high_consensus": float("nan"),
+        results.append(
+            {
+                "k": k,
+                "log_wk": log_wk,
+                "reference_log_wk_mean": reference_mean,
+                "gap": gap,
+                "gap_std": gap_std,
             }
+        )
 
-        # Extract upper triangle (excluding diagonal) to avoid double-counting
-        upper_idx = np.triu_indices(n, k=1)
-        off_diag = arr[upper_idx]
-
-        return {
-            "mean_consensus": float(np.mean(off_diag)),
-            "median_consensus": float(np.median(off_diag)),
-            "frac_high_consensus": float(
-                np.mean(off_diag >= self.high_consensus_threshold)
-            ),
-        }
+    return pd.DataFrame(results)
 
 
-# ---------------------------------------------------------------------------
-# Validation summary table
-# ---------------------------------------------------------------------------
 
-class ValidationSummary:
+def select_k_by_pac(
+    pac_results: pd.DataFrame,
+) -> int:
     """
-    Combine silhouette and bootstrap stability results into one table.
+    Select the candidate k with the lowest PAC score.
+    """
 
-    This class does not rank or pick a "best" k.  It simply joins the
-    two result DataFrames into a single reporting table so that all
-    metrics can be read together.
+    required_columns = {"k", "pac"}
 
-    The thresholds ``ari_threshold_pass`` and ``silhouette_threshold_pass``
-    are used only to add human-readable ``ari_passes`` / ``silhouette_passes``
-    boolean flags; they do not determine any automatic selection.
+    if not required_columns.issubset(
+        pac_results.columns
+    ):
+        raise ValueError(
+            "PAC results must contain 'k' and 'pac' columns."
+        )
+
+    if pac_results.empty:
+        raise ValueError(
+            "PAC results must not be empty."
+        )
+
+    best_row = pac_results.loc[
+        pac_results["pac"].idxmin()
+    ]
+
+    return int(best_row["k"])
+
+
+
+def compute_pac_score(
+    consensus_matrix: pd.DataFrame,
+    lower_bound: float = 0.1,
+    upper_bound: float = 0.9,
+) -> float:
+    """
+    Compute the Proportion of Ambiguous Clustering (PAC).
+
+    PAC is the proportion of pairwise consensus values that fall
+    between lower_bound and upper_bound.
+
+    Lower PAC means less ambiguity and generally more stable clustering.
 
     Parameters
     ----------
-    ari_threshold:
-        Project-defined ARI threshold (from ``ValidationConfig``).
-        Mean ARI >= this value is flagged as passing.
-        This is a project criterion, not a guarantee of biological validity.
-    silhouette_threshold:
-        Project-defined silhouette threshold (from ``ValidationConfig``).
-        Silhouette >= this value is flagged as passing.
+    consensus_matrix:
+        Square sample-by-sample consensus matrix with values in [0, 1].
+
+    lower_bound:
+        Lower ambiguity threshold.
+
+    upper_bound:
+        Upper ambiguity threshold.
+
+    Returns
+    -------
+    float
+        PAC score between 0 and 1.
     """
 
-    def __init__(
-        self,
-        ari_threshold: float = 0.70,
-        silhouette_threshold: float = 0.60,
-    ) -> None:
-        self.ari_threshold = ari_threshold
-        self.silhouette_threshold = silhouette_threshold
-
-    def build(
-        self,
-        silhouette_df: pd.DataFrame,
-        stability_df: pd.DataFrame,
-    ) -> pd.DataFrame:
-        """
-        Merge silhouette and stability results into a single summary table.
-
-        Parameters
-        ----------
-        silhouette_df:
-            Output of ``SilhouetteAnalyzer.compute_all``.
-            Expected columns: ``method``, ``k``, ``silhouette_score``.
-        stability_df:
-            Output of ``BootstrapStability.compute_all``.
-            Expected columns: ``method``, ``k``, ``mean_ari``, ``std_ari``.
-
-        Returns
-        -------
-        pd.DataFrame
-            Columns: ``method``, ``k``, ``silhouette_score``, ``mean_ari``,
-            ``std_ari``, ``ari_passes``, ``silhouette_passes``.
-            Rows are sorted by method then k.
-        """
-        merged = pd.merge(
-            silhouette_df,
-            stability_df,
-            on=["method", "k"],
-            how="outer",
-        )
-        merged = merged.sort_values(["method", "k"]).reset_index(drop=True)
-
-        # Flag columns — these are project-defined criteria, not biological truth
-        merged["ari_passes"] = merged["mean_ari"] >= self.ari_threshold
-        merged["silhouette_passes"] = (
-            merged["silhouette_score"] >= self.silhouette_threshold
+    if consensus_matrix.empty:
+        raise ValueError(
+            "Consensus matrix must not be empty."
         )
 
-        return merged
+    if consensus_matrix.shape[0] != consensus_matrix.shape[1]:
+        raise ValueError(
+            "Consensus matrix must be square."
+        )
+
+    if list(consensus_matrix.index) != list(consensus_matrix.columns):
+        raise ValueError(
+            "Consensus matrix index and columns must match."
+        )
+
+    non_numeric = consensus_matrix.select_dtypes(
+        exclude="number"
+    ).columns.tolist()
+
+    if non_numeric:
+        raise ValueError(
+            "Consensus matrix must be entirely numeric."
+        )
+
+    values = consensus_matrix.to_numpy(dtype=float)
+
+    if not np.isfinite(values).all():
+        raise ValueError(
+            "Consensus matrix contains non-finite values."
+        )
+
+    if ((values < 0) | (values > 1)).any():
+        raise ValueError(
+            "Consensus values must be between 0 and 1."
+        )
+
+    if not 0 <= lower_bound < upper_bound <= 1:
+        raise ValueError(
+            "Bounds must satisfy 0 <= lower_bound < upper_bound <= 1."
+        )
+
+    if len(consensus_matrix) < 2:
+        raise ValueError(
+            "Consensus matrix must contain at least 2 samples."
+        )
+    
+
+    pair_values = values[
+        np.triu_indices_from(values, k=1)
+    ]
+
+    ambiguous = (
+        (pair_values > lower_bound)
+        & (pair_values < upper_bound)
+    )
+
+    return float(ambiguous.mean())
+
+
+def compute_pac_curve(
+    X: pd.DataFrame,
+    consensus_factory: Callable[[int], object],
+    k_values: tuple[int, ...] = (2, 3, 4, 5, 6, 7, 8),
+    lower_bound: float = 0.1,
+    upper_bound: float = 0.9,
+) -> pd.DataFrame:
+    """
+    Compute PAC score across candidate k values.
+
+    Parameters
+    ----------
+    X:
+        Feature matrix, normally PCA output.
+
+    consensus_factory:
+        Function receiving k and returning a ConsensusClusterer.
+
+    k_values:
+        Candidate numbers of clusters.
+
+    lower_bound, upper_bound:
+        PAC ambiguity interval.
+
+    Returns
+    -------
+    pd.DataFrame
+        Columns: k, pac
+    """
+
+    if X.empty:
+        raise ValueError(
+            "Feature matrix must not be empty."
+        )
+
+    if not k_values:
+        raise ValueError(
+            "k_values must contain at least one candidate."
+        )
+
+    if any(k < 2 for k in k_values):
+        raise ValueError(
+            "Every k must be at least 2."
+        )
+
+    if any(k >= len(X) for k in k_values):
+        raise ValueError(
+            "Every k must be smaller than the number of samples."
+        )
+
+    results: list[dict[str, float | int]] = []
+
+    for k in k_values:
+        consensus_clusterer = consensus_factory(k)
+
+        consensus_matrix = (
+            consensus_clusterer.fit_predict(X)
+        )
+
+        pac = compute_pac_score(
+            consensus_matrix,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+        )
+
+        results.append(
+            {
+                "k": k,
+                "pac": pac,
+            }
+        )
+
+    return pd.DataFrame(results)
+
+
+
+
+
+
+def select_k_by_gap(
+    gap_results: pd.DataFrame,
+) -> int:
+    """
+    Select k using the standard Gap Statistic 1-SE rule.
+
+    Choose the smallest k such that:
+
+        Gap(k) >= Gap(k + 1) - s(k + 1)
+
+    where s is the uncertainty of the reference Gap estimate.
+    """
+
+    required_columns = {
+        "k",
+        "gap",
+        "gap_std",
+    }
+
+    if not required_columns.issubset(
+        gap_results.columns
+    ):
+        raise ValueError(
+            "Gap results must contain 'k', 'gap', and 'gap_std' columns."
+        )
+
+    if gap_results.empty:
+        raise ValueError(
+            "Gap results must not be empty."
+        )
+
+    ordered = (
+        gap_results
+        .sort_values("k")
+        .reset_index(drop=True)
+    )
+
+    for i in range(len(ordered) - 1):
+        current_gap = float(
+            ordered.loc[i, "gap"]
+        )
+
+        next_gap = float(
+            ordered.loc[i + 1, "gap"]
+        )
+
+        next_std = float(
+            ordered.loc[i + 1, "gap_std"]
+        )
+
+        if current_gap >= next_gap - next_std:
+            return int(
+                ordered.loc[i, "k"]
+            )
+
+    # If no earlier k satisfies the rule,
+    # fall back to the largest candidate.
+    return int(
+        ordered.iloc[-1]["k"]
+    )
