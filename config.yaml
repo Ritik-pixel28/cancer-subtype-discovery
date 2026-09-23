@@ -33,7 +33,7 @@ validation:
   bootstrap_n_iter: 100
   bootstrap_sample_frac: 0.8
   ari_threshold_pass: 0.70
-  stability_threshold_pass: 0.60
+  silhouette_threshold_pass: 0.60
 
 biomarkers:
   test: "mannwhitneyu"

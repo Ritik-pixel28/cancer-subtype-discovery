@@ -82,7 +82,7 @@ class ValidationConfig(BaseModel):
         le=1.0,
     )
 
-    stability_threshold_pass: float = Field(
+    silhouette_threshold_pass: float = Field(
         default=0.60,
         ge=0.0,
         le=1.0,

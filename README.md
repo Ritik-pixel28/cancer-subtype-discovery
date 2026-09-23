@@ -10,7 +10,7 @@ The initial reference dataset is the **Golub et al. leukemia gene-expression dat
 
 ## Overview
 
-The goal of this project is to build a end-to-end pipeline for discovering and characterizing molecular subgroups from gene-expression data.
+The goal of this project is to build an end-to-end pipeline for discovering and characterizing molecular subgroups from gene-expression data.
 
 The pipeline is designed to:
 
@@ -204,19 +204,72 @@ Using multiple clustering methods allows the project to compare whether discover
 
 ### 5. Cluster Validation
 
-Cluster quality will be evaluated using quantitative validation and resampling-based stability analysis.
+### 5. Cluster Validation and Stability
 
-The project configuration includes:
+After clustering, Phase 5 evaluates whether the discovered partitions are
+well-separated, stable under resampling, and consistent in their consensus
+structure. All evaluation is **purely unsupervised** — cancer labels are never
+used.
+
+#### 5a. Silhouette Analysis
+
+`SilhouetteAnalyzer` computes the mean silhouette coefficient for each
+(method, k) combination using `sklearn.metrics.silhouette_score`. The
+silhouette score ranges from −1 to +1; higher values indicate more compact
+and better-separated clusters.
+
+#### 5b. Bootstrap Stability (ARI)
+
+`BootstrapStability` repeatedly subsamples 80 % of the data without
+replacement, clusters the subset, and compares the subset partition with the
+reference partition using **Adjusted Rand Index (ARI)**. ARI handles arbitrary
+label permutations correctly — a cluster relabelled from 0 to 1 between two
+runs does not lower the score.
+
+Mean and standard deviation of ARI across iterations are reported as
+`mean_ari` and `std_ari`.
+
+Configuration:
 
 ```yaml
 validation:
   bootstrap_n_iter: 100
   bootstrap_sample_frac: 0.8
   ari_threshold_pass: 0.70
-  stability_threshold_pass: 0.60
+  silhouette_threshold_pass: 0.60
 ```
 
-The goal is not simply to find clusters, but to determine whether those clusters are reproducible and meaningful.
+The thresholds flag results as "passing" a project-defined stability
+criterion. **They are not statements about biological correctness.**
+A high ARI means the clustering is reproducible under resampling; it does
+not imply that the discovered groups are true cancer subtypes.
+
+#### 5c. Consensus Matrix Validation
+
+`ConsensusValidator` validates and summarizes the consensus co-clustering
+matrix produced by `ConsensusClusterer` (Phase 4). It checks:
+- Square shape
+- All values in [0, 1]
+- Symmetry
+- Diagonal = 1.0 (a sample is always co-clustered with itself)
+
+Summary statistics reported (off-diagonal pairs only):
+- `mean_consensus` — average co-clustering frequency
+- `median_consensus` — median co-clustering frequency
+- `frac_high_consensus` — fraction of pairs co-clustered ≥ 80 % of the time
+
+#### Distinguishing software tests from statistical validation
+
+| What | Purpose |
+|------|--------|
+| `pytest` unit tests | Verify that the code is correct — inputs, outputs, edge cases |
+| Silhouette score | Measure cluster separation in feature space |
+| Bootstrap ARI | Measure stability of the partition under subsampling |
+| Consensus summary | Measure how consistently sample pairs co-cluster |
+
+These are statistical properties of the clustering solutions. They are **not
+biological validation**. Independent datasets and domain expertise are needed
+before any discovered cluster can be called a cancer subtype.
 
 ---
 
@@ -285,6 +338,14 @@ The current configuration includes a Random Forest surrogate model for this purp
 - [x] Gaussian Mixture Models
 - [x] Consensus clustering (resampling-based co-clustering matrix)
 - [x] Unit tests for all clustering methods (input validation, reproducibility, output shape)
+- [x] Silhouette analysis (`SilhouetteAnalyzer`)
+- [x] Bootstrap stability using Adjusted Rand Index (`BootstrapStability`)
+- [x] Consensus matrix validation and summarization (`ConsensusValidator`)
+- [x] Combined validation summary table (`ValidationSummary`)
+- [x] Config-driven thresholds (all read from `config.yaml`)
+- [x] 78 new Phase 5 unit tests (132 total)
+- [x] Phase 5 integration script on real Golub data (`scripts/run_phase5.py`)
+- [x] Results saved to `reports/validation_results.csv` and `reports/consensus_validation.csv`
 
 ### In Progress
 
@@ -314,6 +375,13 @@ cancer-subtype-discovery/
 ├── data/
 │   └── raw/                    # Local dataset files (not committed)
 │
+├── reports/
+│   ├── validation_results.csv  # Phase 5: silhouette + bootstrap stability
+│   └── consensus_validation.csv # Phase 5: consensus matrix summaries
+│
+├── scripts/
+│   └── run_phase5.py           # Integration script for Phase 5 on Golub data
+│
 ├── src/
 │   ├── clustering/             # Clustering algorithms (Phase 4)
 │   │   ├── __init__.py
@@ -321,6 +389,10 @@ cancer-subtype-discovery/
 │   ├── dimensionality/         # PCA and dimensionality reduction
 │   ├── preprocessing/          # Data preprocessing
 │   ├── utils/                  # Reproducibility utilities
+│   ├── validation/             # Phase 5: cluster validation
+│   │   ├── __init__.py
+│   │   └── core.py             # SilhouetteAnalyzer, BootstrapStability,
+│   │                           # ConsensusValidator, ValidationSummary
 │   ├── config.py               # Configuration models
 │   ├── data_loader.py          # Data loading and validation
 │   ├── exceptions.py           # Project-specific exceptions
@@ -330,7 +402,8 @@ cancer-subtype-discovery/
 │   ├── test_clustering.py
 │   ├── test_data_loader.py
 │   ├── test_dimensionality.py
-│   └── test_preprocessing.py
+│   ├── test_preprocessing.py
+│   └── test_validation.py      # Phase 5: 78 unit tests
 │
 ├── config.yaml                 # Pipeline configuration
 ├── requirements.txt            # Python dependencies
@@ -447,11 +520,13 @@ Current test coverage includes:
 - sample alignment
 - preprocessing
 - dimensionality reduction
+- clustering (K-Means, Hierarchical, GMM, Consensus)
+- cluster validation (silhouette, bootstrap stability, consensus)
 
 A successful run currently reports:
 
 ```text
-54 passed
+132 passed
 ```
 
 Tests are intended to be run before committing changes to the repository.
@@ -544,8 +619,11 @@ The purpose of the current stage is therefore **method development and reproduci
 [x] Hierarchical clustering (Ward)
 [x] Gaussian Mixture Models
 [x] Consensus clustering
-[ ] Cluster validation
-[ ] Stability analysis
+[x] Silhouette analysis
+[x] Bootstrap stability (ARI)
+[x] Consensus matrix validation
+[x] Validation summary table
+[x] Phase 5 integration on Golub data
 [ ] Biomarker discovery
 [ ] Pathway enrichment
 [ ] Explainability
