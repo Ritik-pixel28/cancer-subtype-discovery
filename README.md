@@ -1,35 +1,37 @@
 # Cancer Subtype Discovery
 
-> **An unsupervised machine-learning pipeline for discovering potential molecular subtypes from gene-expression data.**
+> **An unsupervised machine-learning pipeline for discovering and characterizing potential molecular subgroups from gene-expression data.**
 
-Cancer patients with the same clinical diagnosis can have substantially different molecular profiles. This project aims to identify such hidden molecular patterns by applying reproducible unsupervised learning methods to high-dimensional gene-expression data.
+Cancer patients with the same broad clinical diagnosis can show substantially different molecular expression patterns. This project investigates whether hidden molecular structure can be discovered from high-dimensional gene-expression data using reproducible unsupervised machine-learning methods.
 
-The initial reference dataset is the **Golub et al. leukemia gene-expression dataset**, containing 72 samples and 7,129 gene-expression probes.
+The initial reference dataset is the **Golub et al. leukemia gene-expression dataset**, containing **72 patient samples** and **7,129 gene-expression probes**.
 
 ---
 
 ## Overview
 
-The goal of this project is to build an end-to-end pipeline for discovering and characterizing molecular subgroups from gene-expression data.
+The goal of this project is to build an end-to-end and reproducible pipeline for discovering, validating, and biologically interpreting molecular subgroups from gene-expression data.
 
 The pipeline is designed to:
 
 - Load and validate gene-expression data
-- Perform data-quality checks
-- Select informative genes using variability measures
-- Standardize gene-expression values
-- Reduce dimensionality using PCA and other methods
-- Discover molecular clusters
-- Evaluate cluster quality and stability
-- Identify potential cluster-specific biomarkers
-- Perform biological pathway enrichment
-- Provide interpretable visualizations and reports
+- Perform expression-data quality checks
+- Select informative genes using robust variability measures
+- Standardize gene-expression features
+- Reduce dimensionality using PCA
+- Discover patient clusters using multiple clustering algorithms
+- Evaluate cluster separation and stability
+- Compare discovered clusters with known labels only after clustering
+- Identify candidate cluster-specific biomarkers
+- Perform pathway-enrichment analysis
+- Add explainability and biological interpretation
+- Generate reproducible reports and visualizations
 
 ### Core principle
 
-Cancer labels are **not used to create the clusters**.
+Known cancer labels are **not used to create the clusters**.
 
-The discovery process is unsupervised. The available cancer labels are retained separately for downstream interpretation and evaluation.
+The discovery process is unsupervised. Available labels such as ALL and AML are kept separate from feature selection and clustering and are used only later for external evaluation and interpretation.
 
 ---
 
@@ -37,52 +39,67 @@ The discovery process is unsupervised. The available cancer labels are retained 
 
 ```text
                  Gene Expression Data
-                         │
-                         ▼
+                          │
+                          ▼
               Data Loading & Validation
-                         │
-                         ▼
+                          │
+                          ▼
                   Quality Checks
-                         │
-                         ▼
-                Variable Gene Selection
-                         │
-                         ▼
-               Gene-wise Standardization
-                         │
-                         ▼
-                 Dimensionality Reduction
-                         │
-                         ├── PCA
-                         └── UMAP
-                         │
-                         ▼
+                          │
+                          ▼
+             Variable Gene Selection
+                  MAD Top 2000
+                          │
+                          ▼
+             Gene-wise Standardization
+                          │
+                          ▼
+             Dimensionality Reduction
+                          │
+                          ▼
+                       PCA
+                2000 genes → 30 PCs
+                          │
+                          ▼
                      Clustering
-                         │
-              ┌──────────┼──────────┐
-              ▼          ▼          ▼
-           K-Means   Hierarchical   GMM
-                         │
-                         ▼
+                          │
+              ┌───────────┼───────────┐
+              ▼           ▼           ▼
+           K-Means       Ward        GMM
+              │           │           │
+              └───────────┼───────────┘
+                          ▼
                 Consensus Clustering
-                         │
-                         ▼
-                 Cluster Validation
-                         │
-                         ▼
-                  Stability Analysis
-                         │
-                         ▼
-                 Biomarker Discovery
-                         │
-                         ▼
-                Pathway Enrichment
-                         │
-                         ▼
-                   Explainability
-                         │
-                         ▼
-               Reports & Visualization
+                          │
+                          ▼
+                  Cluster Validation
+                          │
+          ┌───────────────┼────────────────┐
+          ▼               ▼                ▼
+        ARI          Silhouette      Bootstrap Stability
+                                           │
+                         ┌─────────────────┴──────────────┐
+                         ▼                                ▼
+                  Gap Statistic                         PAC
+                         │                                │
+                         └──────────────┬─────────────────┘
+                                        ▼
+                              Candidate k Selection
+                                        │
+                                        ▼
+                          Exploratory Consensus Clusters
+                                        │
+                                        ▼
+                              Biomarker Discovery
+                                        │
+                                        ▼
+                              Pathway Enrichment
+                                        │
+                                        ▼
+                                Explainability
+                                        │
+                                        ▼
+                           Reports & Visualization
 ```
 
 ---
@@ -100,29 +117,30 @@ The initial reference dataset is the **Golub leukemia gene-expression dataset** 
 | ALL samples | 47 |
 | AML samples | 25 |
 | Platform | Affymetrix Hgu6800 |
-| Dataset type | Gene-expression |
+| Dataset type | Gene expression |
 | Learning setting | Unsupervised |
 
-The project stores the expression matrix and labels separately:
+The project stores expression data and known labels separately:
 
 ```text
 data/raw/
 ├── golub_expr.csv
-└── golub_labels.csv
+├── golub_labels.csv
+└── golub_dataset.zip
 ```
 
 ### Label usage
 
-The `cancer_type` labels are **not used during feature selection or clustering**.
+The `cancer_type` labels are **not used during variable-gene selection, PCA, clustering, consensus clustering, Gap analysis, PAC analysis, or bootstrap clustering**.
 
-They are retained for:
+Known labels are retained for:
 
-- downstream cluster interpretation
-- evaluation of discovered structure
-- comparison with known leukemia classes
-- biological analysis
+- External evaluation using Adjusted Rand Index
+- Downstream interpretation
+- Comparison with known leukemia classes
+- Biological context
 
-This separation is important because using the known cancer labels to form clusters would turn the discovery process into a supervised task.
+This separation prevents the subtype-discovery stage from becoming a supervised classification task.
 
 ---
 
@@ -130,188 +148,457 @@ This separation is important because using the known cancer labels to form clust
 
 ### 1. Data Loading and Validation
 
-The data-loading layer validates:
+The `DataLoader` validates the structure and alignment of the input datasets.
 
-- required columns
-- missing sample identifiers
-- duplicate sample identifiers
-- empty datasets
-- numeric expression features
-- missing cancer labels
-- sample alignment between expression and label data
+Current checks include:
 
-Invalid input is rejected using project-specific validation exceptions.
+- Required columns
+- Missing sample identifiers
+- Duplicate sample identifiers
+- Empty datasets
+- Numeric expression features
+- Missing cancer labels
+- Sample alignment between expression and label files
+
+Expression and label files must contain the same patient identifiers before the pipeline continues.
 
 ---
 
 ### 2. Preprocessing
 
-The preprocessing stage prepares the high-dimensional expression matrix for downstream analysis.
+The preprocessing stage prepares the high-dimensional gene-expression matrix for clustering.
 
 Current preprocessing includes:
 
-- expression-value diagnostics
-- variable-gene selection
-- Median Absolute Deviation (MAD) based feature selection
-- gene-wise standardization
+- Expression-value diagnostics
+- Median Absolute Deviation based feature selection
+- Selection of the top 2,000 variable genes
+- Gene-wise standardization
 
-The number of selected genes and preprocessing behavior are controlled through `config.yaml`.
+#### Variable-gene selection
+
+Median Absolute Deviation (MAD) is used to rank genes by variability across patients.
+
+For a gene \(g\):
+
+```text
+MAD(g) = median(|x_i - median(x)|)
+```
+
+The 2,000 genes with the highest MAD values are retained.
+
+This step is fully unsupervised and does not use cancer labels.
+
+#### Standardization
+
+Each selected gene is transformed to approximately:
+
+```text
+mean = 0
+standard deviation = 1
+```
+
+This prevents genes with larger numerical scales from dominating PCA and distance-based clustering.
+
+#### Log transformation
+
+A standard `log2(x + 1)` transformation is not currently applied because the Golub expression matrix contains negative values.
+
+The pipeline therefore avoids applying a transformation that would be mathematically invalid for the observed data representation.
 
 ---
 
 ### 3. Dimensionality Reduction
 
-Principal Component Analysis (PCA) is used to transform the high-dimensional gene-expression matrix into a lower-dimensional representation.
+Principal Component Analysis is used to reduce the selected gene-expression matrix from:
+
+```text
+72 samples × 2000 genes
+```
+
+to:
+
+```text
+72 samples × 30 principal components
+```
 
 PCA helps:
 
-- reduce dimensionality
-- capture major sources of variation
-- make downstream clustering more stable
-- visualize sample-level structure
-- identify dominant expression patterns
+- Reduce dimensionality
+- Reduce noise
+- Capture dominant patterns of variation
+- Make clustering more computationally manageable
+- Reduce problems caused by extremely high-dimensional feature space
 
-The current configuration uses:
+### PCA reproducibility
 
-```yaml
-dimensionality_reduction:
-  pca_n_components: 30
-  umap_n_neighbors: 15
-  umap_min_dist: 0.1
-  umap_random_state: 42
+The PCA implementation uses a fixed random state:
+
+```text
+random_state = 42
+```
+
+A dedicated reproducibility test verifies that identical input data and configuration produce identical PCA output.
+
+UMAP remains planned for visualization and is not currently part of the clustering-validation workflow.
+
+---
+
+## 4. Clustering
+
+The current implementation includes four clustering approaches.
+
+### K-Means
+
+K-Means partitions patients into `k` groups by minimizing within-cluster variation.
+
+Current implementation includes:
+
+- Configurable `k`
+- Fixed random seed
+- Multiple initializations
+- Sample-index preservation
+- Input validation
+
+### Hierarchical clustering
+
+Agglomerative hierarchical clustering is implemented using:
+
+```text
+Ward linkage
+Euclidean geometry
+```
+
+Ward linkage attempts to minimize the increase in within-cluster variance during hierarchical merging.
+
+### Gaussian Mixture Model
+
+Gaussian Mixture Models provide a probabilistic clustering approach.
+
+The implementation supports:
+
+- Hard cluster assignments
+- Soft membership probabilities
+- Configurable number of components
+- Fixed random state
+
+### Consensus clustering
+
+Consensus clustering evaluates how consistently pairs of patients are grouped together across repeated subsamples.
+
+For each patient pair:
+
+```text
+consensus ≈ 0
+```
+
+means they are rarely grouped together, while:
+
+```text
+consensus ≈ 1
+```
+
+means they are consistently grouped together.
+
+The consensus matrix can subsequently be converted into hard cluster assignments using average-linkage hierarchical clustering on:
+
+```text
+1 - consensus
 ```
 
 ---
 
-### 4. Clustering
+## 5. Cluster Validation
 
-The planned clustering stage compares multiple unsupervised approaches:
+Phase 5 evaluates clustering solutions using multiple complementary signals.
 
-- K-Means
-- Hierarchical clustering with Ward linkage
-- Gaussian Mixture Models
-- Consensus clustering
+No single validation metric is treated as sufficient evidence by itself.
 
-The clustering configuration currently explores:
+### 5a. Adjusted Rand Index
 
-```yaml
-k_range: [2, 3, 4, 5, 6, 7, 8]
-```
+Adjusted Rand Index is used as **external evaluation** by comparing discovered clusters with the known ALL/AML labels.
 
-Using multiple clustering methods allows the project to compare whether discovered subgroups are consistent across different algorithms.
+The known labels are introduced only after clustering.
 
----
+ARI is therefore used to ask:
 
-### 5. Cluster Validation
+> How much does the discovered partition agree with the known leukemia classes?
 
-### 5. Cluster Validation and Stability
-
-After clustering, Phase 5 evaluates whether the discovered partitions are
-well-separated, stable under resampling, and consistent in their consensus
-structure. All evaluation is **purely unsupervised** — cancer labels are never
-used.
-
-#### 5a. Silhouette Analysis
-
-`SilhouetteAnalyzer` computes the mean silhouette coefficient for each
-(method, k) combination using `sklearn.metrics.silhouette_score`. The
-silhouette score ranges from −1 to +1; higher values indicate more compact
-and better-separated clusters.
-
-#### 5b. Bootstrap Stability (ARI)
-
-`BootstrapStability` repeatedly subsamples 80 % of the data without
-replacement, clusters the subset, and compares the subset partition with the
-reference partition using **Adjusted Rand Index (ARI)**. ARI handles arbitrary
-label permutations correctly — a cluster relabelled from 0 to 1 between two
-runs does not lower the score.
-
-Mean and standard deviation of ARI across iterations are reported as
-`mean_ari` and `std_ari`.
-
-Configuration:
-
-```yaml
-validation:
-  bootstrap_n_iter: 100
-  bootstrap_sample_frac: 0.8
-  ari_threshold_pass: 0.70
-  silhouette_threshold_pass: 0.60
-```
-
-The thresholds flag results as "passing" a project-defined stability
-criterion. **They are not statements about biological correctness.**
-A high ARI means the clustering is reproducible under resampling; it does
-not imply that the discovered groups are true cancer subtypes.
-
-#### 5c. Consensus Matrix Validation
-
-`ConsensusValidator` validates and summarizes the consensus co-clustering
-matrix produced by `ConsensusClusterer` (Phase 4). It checks:
-- Square shape
-- All values in [0, 1]
-- Symmetry
-- Diagonal = 1.0 (a sample is always co-clustered with itself)
-
-Summary statistics reported (off-diagonal pairs only):
-- `mean_consensus` — average co-clustering frequency
-- `median_consensus` — median co-clustering frequency
-- `frac_high_consensus` — fraction of pairs co-clustered ≥ 80 % of the time
-
-#### Distinguishing software tests from statistical validation
-
-| What | Purpose |
-|------|--------|
-| `pytest` unit tests | Verify that the code is correct — inputs, outputs, edge cases |
-| Silhouette score | Measure cluster separation in feature space |
-| Bootstrap ARI | Measure stability of the partition under subsampling |
-| Consensus summary | Measure how consistently sample pairs co-cluster |
-
-These are statistical properties of the clustering solutions. They are **not
-biological validation**. Independent datasets and domain expertise are needed
-before any discovered cluster can be called a cancer subtype.
+It is not used to generate or optimize the clusters.
 
 ---
 
-### 6. Biomarker Discovery
+### 5b. Silhouette Score
 
-Once stable clusters have been identified, genes that differ between clusters will be investigated as potential molecular biomarkers.
+Silhouette Score measures internal cluster separation using the same PCA feature space used for clustering.
 
-The current configuration specifies:
+Higher values indicate that patients are, on average:
 
-```yaml
-biomarkers:
-  test: "mannwhitneyu"
-  fdr_method: "fdr_bh"
-  fdr_threshold: 0.05
-  logfc_threshold: 1.0
-  top_n_report: 20
-```
+- Closer to patients in their own cluster
+- Farther from patients in neighboring clusters
 
-Multiple-testing correction is applied using the Benjamini-Hochberg false-discovery-rate procedure.
+Unlike ARI, Silhouette Score does not require known cancer labels.
 
 ---
 
-### 7. Pathway Enrichment
+### 5c. Bootstrap Stability
 
-Candidate biomarker genes will be analyzed for biological pathway enrichment.
+Bootstrap-style stability analysis repeatedly takes an 80% subset of patients and reruns clustering.
 
-The planned analysis includes:
+Current configuration:
+
+```text
+resamples       = 100
+sample fraction = 0.8
+random state    = 42
+```
+
+The resampled clustering is compared with the corresponding subset of the full-data clustering using best-match **Jaccard membership similarity**.
+
+Cluster numbers themselves are not assumed to remain identical between runs.
+
+For example:
+
+```text
+Run 1: biological group → cluster 0
+Run 2: same group       → cluster 2
+```
+
+is not treated as disagreement simply because the numeric label changed.
+
+The analysis reports:
+
+- Mean stability
+- Lower 95% empirical interval
+- Upper 95% empirical interval
+
+---
+
+### 5d. Gap Statistic
+
+Gap Statistic compares the compactness of clusters in the observed data with clustering obtained from randomly generated reference datasets.
+
+For candidate values:
+
+```text
+k = 2, 3, 4, 5, 6, 7, 8
+```
+
+the implementation calculates:
+
+- Observed log within-cluster dispersion
+- Mean reference log dispersion
+- Gap value
+- Reference variability
+
+Candidate `k` is selected using the **Gap 1-SE rule** rather than simply choosing the largest raw Gap value.
+
+The rule selects the smallest `k` satisfying approximately:
+
+```text
+Gap(k) >= Gap(k + 1) - uncertainty(k + 1)
+```
+
+---
+
+### 5e. PAC
+
+PAC stands for:
+
+**Proportion of Ambiguous Clustering**
+
+It summarizes how many sample pairs in the consensus matrix have uncertain co-clustering probabilities.
+
+Current ambiguity interval:
+
+```text
+0.1 < consensus < 0.9
+```
+
+Lower PAC values indicate fewer ambiguous sample-pair relationships.
+
+The matrix diagonal is excluded because every sample is trivially grouped with itself.
+
+---
+
+## Phase 5 Results on the Golub Dataset
+
+The real-data Phase 5 workflow evaluates candidate clustering solutions for:
+
+```text
+k = 2 through 8
+```
+
+using K-Means, Ward hierarchical clustering, and Gaussian Mixture Models.
+
+### k-selection signals
+
+Both the corrected Gap Statistic rule and PAC analysis support:
+
+```text
+k = 3
+```
+
+Observed PAC values:
+
+| k | PAC |
+|---:|---:|
+| 2 | 0.4100 |
+| 3 | **0.2085** |
+| 4 | 0.3513 |
+| 5 | 0.3842 |
+| 6 | 0.4092 |
+| 7 | 0.4049 |
+| 8 | 0.3858 |
+
+The minimum PAC occurs at:
+
+```text
+k = 3
+```
+
+### k=3 algorithm comparison
+
+| Method | ARI | Silhouette | Mean Stability | 95% Lower | 95% Upper |
+|---|---:|---:|---:|---:|---:|
+| K-Means | 0.0945 | 0.1415 | 0.7902 | 0.5885 | 0.9231 |
+| Ward | 0.1733 | 0.1209 | 0.7819 | 0.5704 | 0.9700 |
+| GMM | 0.3134 | 0.0848 | 0.4321 | 0.3081 | 0.5714 |
+
+These metrics show that the different validation criteria do not all prefer the same clustering algorithm.
+
+For example:
+
+- GMM has stronger agreement with known ALL/AML labels at `k=3`
+- K-Means shows stronger internal separation and higher average bootstrap stability
+- Ward shows similar bootstrap stability to K-Means
+- GMM is considerably less stable under resampling
+
+For this reason, the project does not choose a clustering method based only on ARI.
+
+---
+
+## Exploratory Consensus Solution
+
+A consensus clustering solution was generated using:
+
+```text
+k = 3
+base clusterer = K-Means
+consensus resamples = 100
+sample fraction = 0.8
+random state = 42
+```
+
+Observed evaluation:
+
+```text
+Consensus ARI        = 0.1741
+Consensus Silhouette = 0.1548
+```
+
+Cluster sizes:
+
+| Cluster | Samples |
+|---:|---:|
+| 0 | 14 |
+| 1 | 35 |
+| 2 | 23 |
+
+These assignments are saved as:
+
+```text
+reports/validation/consensus_k3_clusters.csv
+```
+
+### Interpretation caution
+
+The consensus `k=3` partition is currently treated as the **best-supported exploratory clustering solution for downstream analysis**.
+
+It should not be described as a clinically validated set of leukemia subtypes.
+
+The predefined stability and external-agreement goals were not fully achieved, so biological interpretation must remain cautious.
+
+Independent datasets, biological validation, and domain expertise would be required before claiming that the discovered clusters represent true cancer subtypes.
+
+---
+
+## 6. Biomarker Discovery
+
+**Status: In progress**
+
+Phase 6 will investigate genes that differ between the exploratory consensus clusters.
+
+The current planned comparison is:
+
+```text
+Cluster 0 vs all remaining samples
+Cluster 1 vs all remaining samples
+Cluster 2 vs all remaining samples
+```
+
+For each gene, the planned analysis includes:
+
+- Mann-Whitney U test
+- Raw p-value
+- Benjamini-Hochberg FDR correction
+- Median expression within the target cluster
+- Median expression outside the target cluster
+- Median expression difference
+- Ranking of candidate marker genes
+
+### Multiple-testing correction
+
+Thousands of genes are tested simultaneously.
+
+The project therefore uses:
+
+```text
+Benjamini-Hochberg False Discovery Rate
+```
+
+through `statsmodels`.
+
+### Effect-size consideration
+
+The Golub expression matrix contains negative values.
+
+Therefore, the project will not blindly calculate a conventional expression ratio such as:
+
+```python
+log2(mean_cluster / mean_other)
+```
+
+because this can be undefined or misleading when means are zero or negative.
+
+The initial implementation will instead report expression differences that are compatible with the observed data representation.
+
+---
+
+## 7. Pathway Enrichment
+
+**Status: Planned**
+
+Candidate biomarker genes will later be analyzed for biological pathway enrichment.
+
+Planned resources include:
 
 - KEGG
 - Reactome
 - Hallmark gene sets
 - Gene Ontology Biological Processes
 
-This stage is intended to help translate statistical clusters into biologically interpretable patterns.
+The goal is to determine whether statistically identified marker genes correspond to coherent biological pathways.
 
 ---
 
-### 8. Explainability
+## 8. Explainability
 
-The project plans to use interpretable machine-learning techniques to identify features that contribute most strongly to differences between discovered groups.
+**Status: Planned**
 
-The current configuration includes a Random Forest surrogate model for this purpose.
+The project plans to use interpretable machine-learning methods to investigate which genes most strongly distinguish discovered clusters.
+
+A Random Forest surrogate model and SHAP-based interpretation are planned for this stage.
 
 ---
 
@@ -324,94 +611,131 @@ The current configuration includes a Random Forest surrogate model for this purp
 - [x] Reproducibility utilities
 - [x] Golub dataset acquisition
 - [x] Expression and label CSV generation
-- [x] Data loading and validation
-- [x] Sample alignment checks
-- [x] Missing-value checks
+- [x] Data loading and structural validation
+- [x] Sample-alignment validation
 - [x] Expression-value diagnostics
-- [x] Variable-gene selection using MAD
+- [x] MAD variable-gene selection
+- [x] Top 2,000 gene selection
 - [x] Gene-wise standardization
-- [x] Unit tests for data loading and preprocessing
-- [x] PCA implementation
-- [x] Basic PCA unit tests
+- [x] PCA dimensionality reduction
+- [x] PCA reproducibility test
 - [x] K-Means clustering
-- [x] Hierarchical clustering (Ward linkage)
-- [x] Gaussian Mixture Models
-- [x] Consensus clustering (resampling-based co-clustering matrix)
-- [x] Unit tests for all clustering methods (input validation, reproducibility, output shape)
-- [x] Silhouette analysis (`SilhouetteAnalyzer`)
-- [x] Bootstrap stability using Adjusted Rand Index (`BootstrapStability`)
-- [x] Consensus matrix validation and summarization (`ConsensusValidator`)
-- [x] Combined validation summary table (`ValidationSummary`)
-- [x] Config-driven thresholds (all read from `config.yaml`)
-- [x] 78 new Phase 5 unit tests (132 total)
-- [x] Phase 5 integration script on real Golub data (`scripts/run_phase5.py`)
-- [x] Results saved to `reports/validation_results.csv` and `reports/consensus_validation.csv`
+- [x] Ward hierarchical clustering
+- [x] Gaussian Mixture Model clustering
+- [x] Consensus clustering
+- [x] External ARI evaluation
+- [x] Silhouette analysis
+- [x] Bootstrap/Jaccard stability analysis
+- [x] Gap Statistic
+- [x] Gap 1-SE candidate selection
+- [x] PAC analysis
+- [x] Consensus `k=3` evaluation
+- [x] Phase 5 integration on the real Golub dataset
+- [x] Phase 5 result export
+- [x] 80 automated tests passing
+- [x] Phase 5 results committed and pushed to GitHub
+- [x] Biomarker module scaffold
+- [x] `statsmodels` dependency added
 
 ### In Progress
 
-- [ ] PCA explained-variance analysis
-- [ ] PCA visualization
-- [ ] Final dimensionality-reduction workflow
+- [ ] Biomarker discovery
+- [ ] Cluster-vs-rest differential-expression testing
+- [ ] Benjamini-Hochberg FDR correction
+- [ ] Candidate biomarker ranking
 
 ### Planned
 
-- [ ] Cluster validation
-- [ ] Stability analysis
-- [ ] Biomarker discovery
+- [ ] PCA explained-variance analysis
+- [ ] PCA visualization
+- [ ] UMAP visualization
 - [ ] Pathway enrichment
-- [ ] Explainability
-- [ ] Final reports
+- [ ] Biological interpretation
+- [ ] SHAP explainability
+- [ ] Automated report generation
 - [ ] Streamlit interface
+- [ ] End-to-end production pipeline
 
 ---
 
 ## Project Structure
 
-The repository is being developed incrementally. The current implementation is intentionally smaller than the final target architecture.
-
 ```text
 cancer-subtype-discovery/
 │
+├── app/
+│
 ├── data/
-│   └── raw/                    # Local dataset files (not committed)
+│   └── raw/
+│       ├── golub_dataset.zip
+│       ├── golub_expr.csv
+│       └── golub_labels.csv
+│
+├── logs/
+│
+├── models/
+│
+├── notebooks/
 │
 ├── reports/
-│   ├── validation_results.csv  # Phase 5: silhouette + bootstrap stability
-│   └── consensus_validation.csv # Phase 5: consensus matrix summaries
+│   └── validation/
+│       ├── ari_silhouette_results.csv
+│       ├── bootstrap_results.csv
+│       ├── consensus_k3_clusters.csv
+│       ├── gap_results.csv
+│       └── pac_results.csv
 │
 ├── scripts/
-│   └── run_phase5.py           # Integration script for Phase 5 on Golub data
+│   └── run_phase5_validation.py
 │
 ├── src/
-│   ├── clustering/             # Clustering algorithms (Phase 4)
+│   ├── biomarkers/
 │   │   ├── __init__.py
-│   │   └── core.py             # KMeans, Hierarchical, GMM, Consensus
-│   ├── dimensionality/         # PCA and dimensionality reduction
-│   ├── preprocessing/          # Data preprocessing
-│   ├── utils/                  # Reproducibility utilities
-│   ├── validation/             # Phase 5: cluster validation
+│   │   └── core.py
+│   │
+│   ├── clustering/
 │   │   ├── __init__.py
-│   │   └── core.py             # SilhouetteAnalyzer, BootstrapStability,
-│   │                           # ConsensusValidator, ValidationSummary
-│   ├── config.py               # Configuration models
-│   ├── data_loader.py          # Data loading and validation
-│   ├── exceptions.py           # Project-specific exceptions
-│   └── __init__.py
+│   │   └── core.py
+│   │
+│   ├── dimensionality/
+│   │   ├── __init__.py
+│   │   └── core.py
+│   │
+│   ├── enrichment/
+│   ├── explainability/
+│   ├── pipeline/
+│   ├── preprocessing/
+│   │   ├── __init__.py
+│   │   └── core.py
+│   │
+│   ├── reporting/
+│   ├── utils/
+│   ├── validation/
+│   │   ├── __init__.py
+│   │   └── core.py
+│   │
+│   ├── __init__.py
+│   ├── config.py
+│   ├── data_loader.py
+│   └── exceptions.py
+│
+├── templates/
 │
 ├── tests/
+│   ├── test_biomarkers.py
 │   ├── test_clustering.py
 │   ├── test_data_loader.py
 │   ├── test_dimensionality.py
 │   ├── test_preprocessing.py
-│   └── test_validation.py      # Phase 5: 78 unit tests
+│   └── test_validation.py
 │
-├── config.yaml                 # Pipeline configuration
-├── requirements.txt            # Python dependencies
-├── README.md                   # Project documentation
-└── LICENSE                     # Project license
+├── config.yaml
+├── requirements.txt
+├── README.md
+└── LICENSE
 ```
 
-Additional modules such as clustering, validation, biomarkers, enrichment, reporting, and the Streamlit application will be added as the pipeline develops.
+The repository is intentionally modular so that statistical analysis, clustering, biological interpretation, reporting, and application code remain separated.
 
 ---
 
@@ -422,22 +746,24 @@ Additional modules such as clustering, validation, biomarkers, enrichment, repor
 - Python 3.11+
 - Git
 - `pip`
-- Virtual environment support
+- Virtual-environment support
 
-### 1. Clone the repository
+The current development environment has also been tested with Python 3.13.
+
+### Clone the repository
 
 ```bash
 git clone <repository-url>
 cd cancer-subtype-discovery
 ```
 
-### 2. Create a virtual environment
+### Create a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Activate the environment
+### Activate the environment
 
 #### macOS / Linux
 
@@ -451,17 +777,17 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-### 4. Install dependencies
+### Install dependencies
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 ```
 
 ---
 
 ## Dataset Setup
 
-The project expects the following local files:
+The pipeline expects:
 
 ```text
 data/raw/
@@ -469,67 +795,105 @@ data/raw/
 └── golub_labels.csv
 ```
 
-The dataset is intentionally excluded from Git version control because raw project data is listed in `.gitignore`.
+The expression file contains:
 
-After placing the dataset files in the expected location, verify the data-loading pipeline by running the test suite.
+```text
+sample_id + 7,129 gene-expression columns
+```
+
+The labels file contains:
+
+```text
+sample_id
+cancer_type
+```
+
+Raw project data should not be used as a training signal for cluster formation through the known cancer labels.
 
 ---
 
-## Configuration
+## Running Phase 5 Validation
 
-Pipeline parameters are centralized in:
+Run the complete real-data Phase 5 workflow from the repository root:
 
-```text
-config.yaml
+```bash
+python -m scripts.run_phase5_validation
 ```
 
-This includes configuration for:
+The script performs:
 
-- data paths
-- feature selection
-- preprocessing
-- PCA
-- UMAP
-- clustering
-- consensus clustering
-- validation
-- biomarker analysis
-- enrichment
-- explainability
-- reporting
-- application settings
+```text
+Data loading
+    ↓
+MAD top-2000 gene selection
+    ↓
+Standardization
+    ↓
+PCA to 30 components
+    ↓
+K-Means / Ward / GMM comparison
+    ↓
+ARI + Silhouette
+    ↓
+Gap Statistic
+    ↓
+PAC
+    ↓
+Bootstrap stability
+    ↓
+Consensus k=3 evaluation
+    ↓
+Validation result export
+```
 
-Centralizing these parameters helps keep experiments reproducible and avoids hard-coding analysis choices throughout the codebase.
+Generated outputs are stored under:
+
+```text
+reports/validation/
+```
 
 ---
 
 ## Testing
 
-The project uses `pytest` for automated testing.
+The project uses `pytest`.
 
-Run the complete test suite with:
+Run the full suite with:
 
 ```bash
 python -m pytest -v
 ```
 
-Current test coverage includes:
+Current automated testing covers:
 
-- data loading
-- data validation
-- sample alignment
-- preprocessing
-- dimensionality reduction
-- clustering (K-Means, Hierarchical, GMM, Consensus)
-- cluster validation (silhouette, bootstrap stability, consensus)
+- Data loading
+- Input validation
+- Sample alignment
+- Preprocessing
+- MAD feature selection
+- Gene standardization
+- PCA
+- PCA reproducibility
+- K-Means clustering
+- Ward clustering
+- Gaussian Mixture Models
+- Consensus clustering
+- ARI evaluation
+- Silhouette Score
+- Bootstrap stability
+- Gap Statistic
+- Gap candidate selection
+- PAC
+- PAC candidate selection
+- Validation edge cases
 
-A successful run currently reports:
+Current passing suite:
 
 ```text
-132 passed
+80 passed
 ```
 
-Tests are intended to be run before committing changes to the repository.
+Tests are run before changes are pushed to the main branch.
 
 ---
 
@@ -537,96 +901,136 @@ Tests are intended to be run before committing changes to the repository.
 
 Reproducibility is a core requirement of the project.
 
-Random seeds are centralized through the project's reproducibility utilities and configuration.
-
 The default random seed is:
 
 ```text
 42
 ```
 
-Random-state parameters are also explicitly configured for algorithms where applicable.
+Fixed random states are used where applicable for:
 
-The project aims to ensure that the same:
+- PCA
+- K-Means
+- GMM
+- Consensus resampling
+- Gap reference generation
+- Bootstrap resampling
 
-- dataset
-- preprocessing configuration
-- random seed
-- algorithm parameters
+The Phase 5 runner has also been executed twice with identical configuration and compared to verify reproducible output.
 
-produce consistent analytical results.
+The project aims for identical:
+
+- Dataset
+- Preprocessing
+- Random seed
+- Algorithm configuration
+
+to produce consistent analytical results.
 
 ---
 
 ## Design Principles
 
-The project follows several principles throughout development:
+### Unsupervised discovery
+
+Known cancer labels must not influence the formation of discovered clusters.
 
 ### Reproducibility
 
-Analysis parameters should be configurable and deterministic where possible.
+Randomness should be explicitly controlled where possible.
 
 ### Separation of concerns
 
-Data loading, preprocessing, dimensionality reduction, clustering, validation, and reporting are kept as separate components.
+Data loading, preprocessing, dimensionality reduction, clustering, validation, biomarker analysis, enrichment, explainability, and reporting are maintained as separate modules.
 
 ### Testability
 
-Core functionality is covered by automated unit tests.
+Core analytical components should have automated unit tests before being used on the real dataset.
 
-### Unsupervised discovery
+### Multi-metric validation
 
-Known cancer labels are kept separate from the clustering process.
+A clustering solution should not be selected from one metric alone.
 
-### Statistical validation
+The project combines:
 
-Discovered clusters should be evaluated for both quality and stability rather than accepted solely based on visual separation.
+```text
+ARI
+Silhouette
+Bootstrap Stability
+Gap Statistic
+PAC
+Consensus analysis
+```
+
+### Statistical caution
+
+Good clustering metrics do not automatically imply that discovered groups are biologically or clinically meaningful.
 
 ### Biological interpretation
 
-Statistical findings should ultimately be connected to biomarkers and biological pathways.
+Candidate subgroups must eventually be investigated through genes, pathways, external datasets, and domain expertise.
 
 ---
 
 ## Limitations
 
-The current study is an initial prototype based on the Golub leukemia dataset.
+The current project is an exploratory prototype.
 
 Important limitations include:
 
-- The dataset contains a relatively small number of samples compared with the number of gene-expression features.
-- The initial dataset represents leukemia rather than multiple cancer types.
-- Discovered clusters require independent validation before being considered clinically meaningful.
-- Statistical association does not automatically imply biological or clinical relevance.
-- The current implementation is still under active development.
+- Only 72 patient samples are available
+- The number of genes is much larger than the number of patients
+- The initial dataset focuses on leukemia
+- Cluster-validation metrics do not all strongly agree
+- Bootstrap lower confidence bounds do not fully meet the originally desired stability target
+- External ARI agreement is modest
+- The exploratory consensus clusters have not been independently validated
+- No clinical conclusions should currently be drawn
+- Biomarker discovery and pathway interpretation are still under development
+- Independent datasets will be required for meaningful biological validation
 
-The purpose of the current stage is therefore **method development and reproducible pipeline construction**, not clinical diagnosis.
+The purpose of the current work is:
+
+> **reproducible exploratory molecular subgroup discovery and methodology development, not clinical diagnosis.**
 
 ---
 
 ## Roadmap
 
 ```text
+[x] Project setup
 [x] Data acquisition
 [x] Data validation
-[x] Preprocessing
-[x] Variable-gene selection
+[x] Sample alignment
+[x] Expression diagnostics
+[x] MAD variable-gene selection
 [x] Standardization
 [x] PCA implementation
-[ ] PCA analysis and visualization
-[ ] UMAP
+[x] PCA reproducibility
 [x] K-Means clustering
-[x] Hierarchical clustering (Ward)
+[x] Ward hierarchical clustering
 [x] Gaussian Mixture Models
 [x] Consensus clustering
+[x] ARI evaluation
 [x] Silhouette analysis
-[x] Bootstrap stability (ARI)
-[x] Consensus matrix validation
-[x] Validation summary table
-[x] Phase 5 integration on Golub data
+[x] Bootstrap stability
+[x] Gap Statistic
+[x] Gap 1-SE selection
+[x] PAC analysis
+[x] Phase 5 real-data integration
+[x] Consensus k=3 exploratory partition
+[x] Phase 5 result export
+[x] 80-test regression suite
+
 [ ] Biomarker discovery
+[ ] Mann-Whitney testing
+[ ] BH-FDR correction
+[ ] Candidate marker ranking
+[ ] PCA visualization
+[ ] UMAP
 [ ] Pathway enrichment
-[ ] Explainability
+[ ] Biological interpretation
+[ ] Explainability / SHAP
 [ ] Automated reporting
 [ ] Streamlit application
 [ ] End-to-end pipeline
@@ -636,13 +1040,25 @@ The purpose of the current stage is therefore **method development and reproduci
 
 ## Scientific Context
 
-This project is motivated by the observation that molecular heterogeneity can exist within broad disease categories.
+This project is motivated by the observation that substantial molecular heterogeneity can exist within broad disease categories.
 
-Instead of starting with predefined cancer subtypes, the pipeline first analyzes gene-expression structure and attempts to identify naturally occurring molecular groups.
+Instead of starting with predefined subtype labels, the pipeline first analyzes expression patterns and attempts to identify naturally occurring patient groups.
 
-The resulting groups can then be compared with known clinical or biological labels as part of downstream interpretation.
+Only after those groups have been formed are known labels introduced for external comparison.
 
-This approach is intended to support exploratory cancer-subtype discovery rather than replace established clinical classification.
+The resulting workflow therefore separates:
+
+```text
+Discovery
+    ↓
+Statistical validation
+    ↓
+External comparison
+    ↓
+Biological interpretation
+```
+
+This approach is intended to support exploratory cancer-subtype research rather than replace established clinical classification.
 
 ---
 
@@ -654,7 +1070,7 @@ This project is distributed under the license included in the repository's `LICE
 
 ## Acknowledgements
 
-The initial reference dataset is based on the leukemia gene-expression study by:
+The initial reference dataset is based on:
 
 **Golub, T. R. et al. (1999).**  
 *Molecular Classification of Cancer: Class Discovery and Class Prediction by Gene Expression Monitoring.*
@@ -667,4 +1083,22 @@ The dataset is accessed through the Bioconductor `golubEsets` package.
 
 **Status:** 🚧 Active Development
 
-The core data-loading, validation, preprocessing, reproducibility, and PCA components are currently implemented and tested. The remaining clustering, validation, biomarker, enrichment, explainability, reporting, and application components are under development.
+### Current milestone
+
+```text
+Phase 1 — Data loading                  ✅
+Phase 2 — Preprocessing                 ✅
+Phase 3 — PCA                           ✅
+Phase 4 — Clustering                    ✅
+Phase 5 — Cluster validation            ✅
+Phase 6 — Biomarker discovery           🚧 In Progress
+Phase 7 — Pathway enrichment            ⏳ Planned
+Phase 8 — Explainability                ⏳ Planned
+Phase 9 — Reporting / application       ⏳ Planned
+```
+
+Phase 5 has produced an exploratory `k=3` consensus partition for downstream analysis.
+
+Phase 6 is now beginning with statistical identification of genes that distinguish the discovered clusters.
+
+The project remains an exploratory research pipeline and does not currently make clinical or diagnostic claims.
