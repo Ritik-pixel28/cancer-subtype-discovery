@@ -525,55 +525,1077 @@ Independent datasets, biological validation, and domain expertise would be requi
 
 ## 6. Biomarker Discovery
 
-**Status: In progress**
+**Status: Phase 6 implementation and analysis completed — final Git commit and push pending**
 
-Phase 6 will investigate genes that differ between the exploratory consensus clusters.
+Phase 6 moves the project from cluster discovery toward biological interpretation.
 
-The current planned comparison is:
+Phase 5 answered:
 
-```text
-Cluster 0 vs all remaining samples
-Cluster 1 vs all remaining samples
-Cluster 2 vs all remaining samples
-```
+> How are the patient samples grouped?
 
-For each gene, the planned analysis includes:
+Phase 6 now asks:
 
-- Mann-Whitney U test
-- Raw p-value
-- Benjamini-Hochberg FDR correction
-- Median expression within the target cluster
-- Median expression outside the target cluster
-- Median expression difference
-- Ranking of candidate marker genes
+> Which genes are most strongly associated with each discovered cluster?
 
-### Multiple-testing correction
-
-Thousands of genes are tested simultaneously.
-
-The project therefore uses:
+The exploratory consensus solution from Phase 5 contains three clusters:
 
 ```text
-Benjamini-Hochberg False Discovery Rate
+Cluster 0 → 14 samples
+Cluster 1 → 35 samples
+Cluster 2 → 23 samples
 ```
 
-through `statsmodels`.
+Biomarker discovery is performed at the **original gene-expression level**, not on PCA components.
 
-### Effect-size consideration
+PCA was useful for clustering because it reduced 2,000 selected genes into 30 principal components. However, a principal component is a combination of many genes and is not itself a biological gene.
 
-The Golub expression matrix contains negative values.
+Therefore, Phase 6 returns to the actual MAD-selected gene-expression features.
 
-Therefore, the project will not blindly calculate a conventional expression ratio such as:
+---
+
+### Phase 6 Workflow
+
+```text
+                    Consensus k = 3 Clusters
+                              │
+                              ▼
+                   Gene Expression Matrix
+                     Top 2,000 MAD Genes
+                              │
+                              ▼
+                     Sample ID Alignment
+                              │
+                              ▼
+             ┌────────────────┼────────────────┐
+             │                │                │
+             ▼                ▼                ▼
+        Cluster 0         Cluster 1         Cluster 2
+          vs Rest           vs Rest           vs Rest
+             │                │                │
+             └────────────────┼────────────────┘
+                              │
+                              ▼
+                     Mann-Whitney U Test
+                       for every gene
+                              │
+                              ▼
+                         Raw p-values
+                              │
+                              ▼
+                Benjamini-Hochberg FDR
+                              │
+                              ▼
+                 Median Expression Difference
+                              │
+                              ▼
+                Rank-Biserial Effect Size
+                              │
+                              ▼
+                 Statistical Significance
+                      FDR < 0.05
+                              │
+                              ▼
+                 Effect-Size Investigation
+                              │
+              ┌───────────────┼───────────────┐
+              ▼               ▼               ▼
+           ≥ 0.5           ≥ 0.7           ≥ 0.8
+                                                │
+                                                ▼
+                                   Strong Candidate Filter
+                                   |rank-biserial| ≥ 0.8
+                                                │
+                                                ▼
+                                    Direction Analysis
+                                       Higher / Lower
+                                                │
+                                                ▼
+                                  Cross-Cluster Overlap
+                                                │
+                                                ▼
+                                Affymetrix Probe Annotation
+                                      using GEO GPL80
+                                                │
+                                                ▼
+                                    Actual Gene Symbols
+                                                │
+                                                ▼
+                              Top Annotated Candidate Genes
+                                                │
+                                                ▼
+                              Input for Pathway Enrichment
+```
+
+---
+
+### 6.1 Cluster-vs-Rest Design
+
+Biomarker discovery is performed separately for each consensus cluster.
+
+The comparisons are:
+
+```text
+Cluster 0
+14 samples
+     │
+     ▼
+vs
+     │
+     ▼
+Cluster 1 + Cluster 2
+58 samples
+```
+
+```text
+Cluster 1
+35 samples
+     │
+     ▼
+vs
+     │
+     ▼
+Cluster 0 + Cluster 2
+37 samples
+```
+
+```text
+Cluster 2
+23 samples
+     │
+     ▼
+vs
+     │
+     ▼
+Cluster 0 + Cluster 1
+49 samples
+```
+
+This one-vs-rest approach allows the pipeline to identify genes whose expression patterns are particularly associated with an individual cluster.
+
+---
+
+### 6.2 Input Alignment
+
+Correct sample alignment is essential before statistical testing.
+
+The expression matrix contains:
+
+```text
+72 expression samples
+```
+
+and the Phase 5 consensus result contains:
+
+```text
+72 cluster assignments
+```
+
+The pipeline verifies that:
+
+```text
+Expression samples = 72
+Cluster labels     = 72
+Missing IDs        = 0
+Unknown IDs        = 0
+```
+
+Samples are matched using `sample_id`, rather than relying only on row order.
+
+This prevents a patient's expression profile from accidentally being compared with another patient's cluster assignment.
+
+---
+
+### 6.3 Gene Selection for Biomarker Analysis
+
+The original Golub dataset contains:
+
+```text
+7,129 expression probes
+```
+
+The same unsupervised MAD-based selection used earlier in the pipeline is applied to retain:
+
+```text
+Top 2,000 variable genes
+```
+
+Biomarker testing is then performed on these 2,000 gene-expression features.
+
+Unlike clustering, Phase 6 does **not** perform biomarker analysis using the 30 PCA components.
+
+---
+
+### 6.4 Mann-Whitney U Test
+
+For every selected gene, the target cluster is compared against all remaining samples using a two-sided:
+
+```text
+Mann-Whitney U Test
+```
+
+The Mann-Whitney U test is a non-parametric statistical test.
+
+It is useful here because gene-expression values are not assumed to follow a normal distribution.
+
+For a particular gene:
+
+```text
+Target Cluster Expression
+          │
+          │
+          ▼
+     [x1, x2, x3, ...]
+          │
+          │
+          ├──────────────┐
+          │              │
+          ▼              ▼
+    Mann-Whitney U   Remaining Samples
+          │              │
+          │              ▼
+          │        [y1, y2, y3, ...]
+          │
+          ▼
+      U Statistic
+          │
+          ▼
+       p-value
+```
+
+A lower p-value indicates stronger statistical evidence that the two expression distributions differ.
+
+---
+
+### 6.5 Constant-Gene Handling
+
+During unit testing, an important edge case was identified.
+
+A gene can occasionally contain exactly the same expression value across every sample.
+
+Example:
+
+```text
+Target Cluster → [5, 5, 5]
+
+Rest           → [5, 5, 5]
+```
+
+Such a gene contains no information that can distinguish the groups.
+
+The pipeline explicitly handles this case as:
+
+```text
+p-value            = 1.0
+median difference  = 0
+rank-biserial      = 0
+```
+
+This also prevents missing statistical values from affecting downstream FDR correction.
+
+---
+
+### 6.6 Multiple-Testing Correction
+
+A major issue in gene-expression analysis is that thousands of statistical tests are performed simultaneously.
+
+If 2,000 genes were tested using only:
+
+```text
+p < 0.05
+```
+
+some genes could appear significant purely by chance.
+
+Therefore, Phase 6 applies:
+
+```text
+Benjamini-Hochberg
+False Discovery Rate
+```
+
+using `statsmodels`.
+
+The primary significance criterion is:
+
+```text
+FDR < 0.05
+```
+
+The workflow is:
+
+```text
+2,000 Gene Tests
+       │
+       ▼
+2,000 Raw p-values
+       │
+       ▼
+Benjamini-Hochberg Correction
+       │
+       ▼
+Adjusted FDR Values
+       │
+       ▼
+FDR < 0.05
+       │
+       ▼
+Statistically Significant
+Cluster-Associated Genes
+```
+
+---
+
+### 6.7 Expression Difference
+
+Statistical significance alone does not describe the direction of a gene-expression difference.
+
+Therefore, Phase 6 also calculates:
+
+```text
+median_in_cluster
+median_out_cluster
+median_difference
+```
+
+where:
+
+```text
+median_difference
+=
+median_in_cluster
+-
+median_out_cluster
+```
+
+Interpretation:
+
+```text
+median_difference > 0
+        │
+        ▼
+Gene expression is higher
+in the target cluster
+```
+
+```text
+median_difference < 0
+        │
+        ▼
+Gene expression is lower
+in the target cluster
+```
+
+Median values are used because they are less sensitive to extreme observations than means.
+
+---
+
+### 6.8 Why Conventional log2 Fold Change Is Not Used
+
+The current Golub expression representation contains negative values.
+
+Therefore, blindly calculating:
 
 ```python
 log2(mean_cluster / mean_other)
 ```
 
-because this can be undefined or misleading when means are zero or negative.
+could be undefined or misleading when group means are zero or negative.
 
-The initial implementation will instead report expression differences that are compatible with the observed data representation.
+For this reason, the current implementation reports:
+
+```text
+Median Expression Difference
++
+Rank-Biserial Effect Size
+```
+
+instead of forcing a conventional log2 fold-change calculation onto an incompatible numerical representation.
 
 ---
+
+### 6.9 Rank-Biserial Effect Size
+
+Along with statistical significance, the pipeline calculates a rank-based effect size derived from the Mann-Whitney U statistic.
+
+The rank-biserial value ranges approximately from:
+
+```text
+-1 ---------------- 0 ---------------- +1
+ │                  │                   │
+ ▼                  ▼                   ▼
+Lower in         Weak / No          Higher in
+Target Cluster   Separation         Target Cluster
+```
+
+Interpretation:
+
+```text
+rank_biserial > 0
+→ target cluster generally has higher expression
+
+rank_biserial < 0
+→ target cluster generally has lower expression
+
+|rank_biserial| closer to 1
+→ stronger separation between the groups
+```
+
+This allows genes to be evaluated using both:
+
+```text
+Statistical Significance
+          +
+Effect Magnitude
+```
+
+rather than p-values alone.
+
+---
+
+## Phase 6 Results on the Golub Dataset
+
+The Phase 6 pipeline was successfully executed on the real Golub dataset.
+
+For each of the three consensus clusters:
+
+```text
+Genes tested per comparison = 2,000
+```
+
+The results were:
+
+| Cluster | Samples | Genes Tested | FDR < 0.05 |
+|---:|---:|---:|---:|
+| 0 | 14 | 2,000 | 743 |
+| 1 | 35 | 2,000 | 1,192 |
+| 2 | 23 | 2,000 | 933 |
+
+The large number of significant genes suggests that the discovered clusters differ across many expression features.
+
+However, these genes should not automatically be interpreted as validated biomarkers.
+
+The clusters and gene associations are discovered from the same exploratory dataset.
+
+Therefore, the project refers to them as:
+
+> **candidate cluster-associated genes**
+
+rather than clinically validated cancer biomarkers.
+
+---
+
+### 6.10 Effect-Size Sensitivity Analysis
+
+Because FDR significance alone retained hundreds of genes, several effect-size thresholds were investigated.
+
+The number of candidates remaining at each threshold was:
+
+| `|rank-biserial|` Threshold | Cluster 0 | Cluster 1 | Cluster 2 |
+|---:|---:|---:|---:|
+| ≥ 0.5 | 597 | 561 | 520 |
+| ≥ 0.6 | 425 | 297 | 333 |
+| ≥ 0.7 | 251 | 85 | 162 |
+| ≥ 0.8 | 123 | 16 | 44 |
+
+The pattern can be visualized as:
+
+```text
+Effect-size threshold becomes stricter
+                    │
+                    ▼
+
+        0.5           0.6           0.7           0.8
+         │             │             │             │
+         ▼             ▼             ▼             ▼
+
+C0      597    ───►    425    ───►   251    ───►   123
+
+C1      561    ───►    297    ───►    85    ───►    16
+
+C2      520    ───►    333    ───►   162    ───►    44
+```
+
+For a more conservative exploratory shortlist, the project currently uses:
+
+```text
+FDR < 0.05
+      AND
+|rank_biserial| >= 0.8
+```
+
+The `0.8` threshold is used as a **project-level exploratory strength filter**.
+
+It is not presented as a universal biological cutoff.
+
+---
+
+### 6.11 Strong Candidate Results
+
+After applying:
+
+```text
+FDR < 0.05
+AND
+|rank_biserial| >= 0.8
+```
+
+the strong candidate counts are:
+
+```text
+                Strong Candidates
+
+Cluster 0             123
+   │
+   ├── Higher         119
+   └── Lower            4
+
+
+Cluster 1              16
+   │
+   ├── Higher           3
+   └── Lower           13
+
+
+Cluster 2              44
+   │
+   ├── Higher          24
+   └── Lower           20
+```
+
+In table form:
+
+| Cluster | Strong Candidates | Higher | Lower |
+|---:|---:|---:|---:|
+| 0 | 123 | 119 | 4 |
+| 1 | 16 | 3 | 13 |
+| 2 | 44 | 24 | 20 |
+
+Across all comparisons:
+
+```text
+Strong candidate rows = 183
+Unique strong probes  = 180
+```
+
+---
+
+### 6.12 Cross-Cluster Overlap
+
+Only three strong probes appear in more than one cluster comparison:
+
+```text
+D10326_s_at
+U52112_rna5_at
+X95190_at
+```
+
+Their direction changes between Cluster 1 and Cluster 2.
+
+For example:
+
+```text
+                    X95190_at
+
+              ┌──────────┴──────────┐
+              │                     │
+              ▼                     ▼
+
+          Cluster 1             Cluster 2
+
+             Higher                Lower
+
+         effect +0.844         effect -0.897
+```
+
+This is not automatically considered an error.
+
+Because the analysis uses one-vs-rest comparisons, the same probe can distinguish different clusters in opposite directions.
+
+---
+
+## 6.13 Affymetrix Probe Annotation
+
+The Golub dataset uses older Affymetrix probe identifiers such as:
+
+```text
+L20298_at
+M94856_at
+X56468_at
+U57342_at
+L12392_at
+```
+
+These identifiers are useful statistically but are difficult to interpret biologically.
+
+Therefore, strong probes are mapped to gene annotations using:
+
+```text
+GEO Platform GPL80
+Affymetrix Hgu6800
+```
+
+The project uses:
+
+```text
+GEOparse
+```
+
+to retrieve and process the GPL80 annotation table.
+
+The annotation stage converts:
+
+```text
+Affymetrix Probe ID
+        │
+        ▼
+Gene Symbol
+        │
+        ▼
+Gene Title
+        │
+        ▼
+Entrez Gene Information
+        │
+        ▼
+Biologically Interpretable Candidate
+```
+
+---
+
+### 6.14 Annotation Results
+
+The strong-candidate annotation produced:
+
+```text
+Strong candidate rows : 183
+Unique probes         : 180
+Mapped rows           : 170 / 183
+Unmapped rows         : 13
+Mapping rate          : approximately 92.9%
+```
+
+Some older Affymetrix probes cannot be mapped cleanly to a current gene symbol.
+
+These unmapped probes are retained separately rather than silently discarded.
+
+They are saved in:
+
+```text
+reports/biomarkers/unmapped_strong_probes.csv
+```
+
+---
+
+### 6.15 Example Probe-to-Gene Mappings
+
+Examples from the annotation stage include:
+
+| Probe ID | Gene Symbol | Gene Description |
+|---|---|---|
+| `L20298_at` | `CBFB` | core-binding factor, beta subunit |
+| `M94856_at` | `FABP5` | fatty acid binding protein 5 |
+| `X56468_at` | `YWHAQ` | 14-3-3 protein theta |
+| `X65488_at` | `HNRNPU` | heterogeneous nuclear ribonucleoprotein U |
+| `M13450_at` | `ESD` | esterase D |
+| `U20998_at` | `SRP9` | signal recognition particle 9kDa |
+| `X13238_at` | `COX6C` | cytochrome c oxidase subunit VIc |
+| `D55654_at` | `MDH1` | malate dehydrogenase 1 |
+| `D38551_at` | `RAD21` | RAD21 cohesin complex component |
+| `D13370_at` | `APEX1` | DNA repair enzyme |
+| `D63881_at` | `SUZ12` | polycomb repressive complex 2 subunit |
+
+---
+
+## 6.16 Final Candidate Ranking
+
+After annotation, the pipeline produces the top mapped candidate genes for each cluster.
+
+Candidates are ranked using:
+
+```text
+Lower FDR
+    │
+    ▼
+Stronger Statistical Evidence
+    │
+    +
+    ▼
+Larger Absolute Rank-Biserial Effect
+    │
+    ▼
+Top Exploratory Candidates
+```
+
+The final report keeps:
+
+```text
+Top 10 annotated candidates per cluster
+```
+
+---
+
+### Cluster 0 — Example Top Candidates
+
+Current mapped candidates include:
+
+```text
+CBFB
+FABP5
+YWHAQ
+HNRNPU
+ESD
+H3F3A / H3F3AP4 / H3F3B
+SRP9
+SET / SETSIP
+COX6C
+MDH1
+```
+
+Cluster 0 is dominated by genes with:
+
+```text
+higher expression relative to the rest
+```
+
+which is consistent with the strong-candidate direction summary:
+
+```text
+119 higher
+4 lower
+```
+
+---
+
+### Cluster 1 — Top Candidates
+
+The current final ranking includes:
+
+| Rank | Gene | Probe | Direction | Rank-Biserial |
+|---:|---|---|---|---:|
+| 1 | MLF2 | `U57342_at` | Lower | -0.8888 |
+| 2 | AAMP | `M95627_at` | Lower | -0.8641 |
+| 3 | ARHGEF2 | `U72206_at` | Lower | -0.8579 |
+| 4 | PKLR | `D10326_s_at` | Higher | 0.8471 |
+| 5 | CHMP1A | `U58048_at` | Lower | -0.8440 |
+| 6 | ACOX2 | `X95190_at` | Higher | 0.8440 |
+| 7 | RENBP | `U52112_rna5_at` | Lower | -0.8286 |
+| 8 | TAX1BP1 | `U33821_at` | Lower | -0.8278 |
+| 9 | TLK2 | `AB004884_at` | Lower | -0.8224 |
+| 10 | PTPN1 | `M31724_at` | Lower | -0.8193 |
+
+Cluster 1 therefore shows a strong tendency toward:
+
+```text
+lower expression among its strongest candidate genes
+```
+
+with:
+
+```text
+3 higher
+13 lower
+```
+
+strong candidates overall.
+
+---
+
+### Cluster 2 — Top Candidates
+
+The current final ranking includes:
+
+| Rank | Gene | Probe | Direction | Rank-Biserial |
+|---:|---|---|---|---:|
+| 1 | HTT | `L12392_at` | Higher | 0.9272 |
+| 2 | GOLGA2 | `L06147_at` | Lower | -0.9130 |
+| 3 | ADAM15 | `U41767_s_at` | Higher | 0.9104 |
+| 4 | GAST | `M15958_at` | Lower | -0.9015 |
+| 5 | PIK3R2 | `X80907_at` | Higher | 0.8988 |
+| 6 | ACOX2 | `X95190_at` | Lower | -0.8971 |
+| 7 | TERT | `AF015950_at` | Lower | -0.8864 |
+| 8 | INHA | `X04445_rna1_s_at` | Lower | -0.8829 |
+| 9 | CSN2 | `L10615_s_at` | Higher | 0.8829 |
+| 10 | H3F3A / H3F3AP4 / H3F3B | `X05855_at` | Lower | -0.8776 |
+
+Cluster 2 shows a more balanced strong-expression pattern:
+
+```text
+24 higher
+20 lower
+```
+
+---
+
+## 6.17 Phase 6 Output Files
+
+The Phase 6 workflow generates:
+
+```text
+reports/
+│
+└── biomarkers/
+    │
+    ├── cluster_0_vs_rest.csv
+    │
+    ├── cluster_1_vs_rest.csv
+    │
+    ├── cluster_2_vs_rest.csv
+    │
+    ├── all_biomarker_results.csv
+    │
+    ├── significant_biomarkers.csv
+    │
+    ├── top20_candidates_per_cluster.csv
+    │
+    ├── biomarker_summary.csv
+    │
+    ├── strong_candidates.csv
+    │
+    ├── strong_candidates_annotated.csv
+    │
+    ├── top10_annotated_candidates_per_cluster.csv
+    │
+    └── unmapped_strong_probes.csv
+```
+
+The main final Phase 6 report is:
+
+```text
+reports/biomarkers/
+top10_annotated_candidates_per_cluster.csv
+```
+
+---
+
+## 6.18 Phase 6 Scripts
+
+The Phase 6 workflow is separated into three executable stages.
+
+```text
+scripts/
+│
+├── run_phase6_biomarkers.py
+│       │
+│       └── Statistical biomarker discovery
+│
+├── annotate_phase6_probes.py
+│       │
+│       └── GPL80 probe → gene annotation
+│
+└── finalize_phase6_biomarkers.py
+        │
+        └── Final top candidate reports
+```
+
+Run the statistical analysis using:
+
+```bash
+python -m scripts.run_phase6_biomarkers
+```
+
+Run probe annotation using:
+
+```bash
+python -m scripts.annotate_phase6_probes
+```
+
+Create the final candidate report using:
+
+```bash
+python -m scripts.finalize_phase6_biomarkers
+```
+
+---
+
+## 6.19 Phase 6 Testing
+
+A dedicated biomarker unit-test suite was added.
+
+Current Phase 6 tests verify:
+
+```text
+Biomarker result shape                    ✅
+Expected output columns                   ✅
+FDR range                                 ✅
+Positive expression direction             ✅
+Negative expression direction             ✅
+Sample-ID alignment                       ✅
+Sample mismatch rejection                 ✅
+Unknown cluster rejection                 ✅
+NaN rejection                             ✅
+Constant-gene handling                    ✅
+```
+
+Phase 6 biomarker tests:
+
+```text
+10 passed
+```
+
+The full project regression suite reached:
+
+```text
+90 passed
+```
+
+A final full regression run will be performed immediately before the Phase 6 Git commit.
+
+---
+
+## 6.20 Phase 6 Dependencies
+
+Phase 6 adds:
+
+```text
+statsmodels
+GEOparse
+```
+
+`statsmodels` is used for:
+
+```text
+Benjamini-Hochberg FDR correction
+```
+
+and `GEOparse` is used for:
+
+```text
+GPL80 probe annotation
+```
+
+The installed GEOparse version used during development is:
+
+```text
+GEOparse 2.0.4
+```
+
+---
+
+## 6.21 Scientific Interpretation
+
+Phase 6 creates a bridge between unsupervised cluster discovery and biological interpretation.
+
+```text
+Phase 5
+Cluster Discovery
+      │
+      ▼
+Three Exploratory Groups
+      │
+      ▼
+Phase 6
+Gene-Level Comparison
+      │
+      ▼
+Candidate Cluster-Associated Genes
+      │
+      ▼
+Probe Annotation
+      │
+      ▼
+Biologically Interpretable Gene Symbols
+      │
+      ▼
+Phase 7
+Pathway Enrichment
+```
+
+Phase 5 answered:
+
+> **Which patients tend to group together?**
+
+Phase 6 answers:
+
+> **Which gene-expression differences characterize those groups?**
+
+Phase 7 will investigate:
+
+> **Do those candidate genes converge on meaningful biological pathways?**
+
+---
+
+### Interpretation Caution
+
+The Phase 6 genes should **not** currently be described as clinically validated cancer biomarkers.
+
+The reasons include:
+
+- the Golub dataset contains only 72 samples
+- clusters were discovered using the same exploratory dataset
+- biomarker associations were then tested on that same dataset
+- the clusters themselves require external validation
+- the strong-effect threshold is an exploratory project choice
+- some probes come from an older microarray annotation platform
+
+The appropriate terminology is therefore:
+
+```text
+Candidate biomarkers
+```
+
+or preferably:
+
+```text
+Cluster-associated candidate genes
+```
+
+Independent cohorts and biological validation would be required before these genes could be considered validated leukemia biomarkers.
+
+---
+
+## Phase 6 Summary
+
+```text
+                     PHASE 6 SUMMARY
+
+                Consensus k = 3 Clusters
+                           │
+                           ▼
+                  2,000 Selected Genes
+                           │
+                           ▼
+                 Cluster-vs-Rest Testing
+                           │
+                           ▼
+                  Mann-Whitney U Test
+                           │
+                           ▼
+                    BH-FDR Correction
+                           │
+                           ▼
+          ┌────────────────┴────────────────┐
+          ▼                                 ▼
+ Median Expression Difference      Rank-Biserial Effect
+                                            │
+                                            ▼
+                                 Effect Threshold Study
+                                            │
+                                            ▼
+                              |rank-biserial| >= 0.8
+                                            │
+                                            ▼
+                                  Strong Candidates
+                                            │
+                       ┌────────────────────┼────────────────────┐
+                       ▼                    ▼                    ▼
+                  Cluster 0            Cluster 1            Cluster 2
+                     123                   16                   44
+                       │                    │                    │
+                       └────────────────────┼────────────────────┘
+                                            │
+                                            ▼
+                                  GPL80 Annotation
+                                            │
+                                            ▼
+                                  170 / 183 Mapped
+                                            │
+                                            ▼
+                             Top 10 Candidates per Cluster
+                                            │
+                                            ▼
+                              Ready for Pathway Analysis
+```
+
 
 ## 7. Pathway Enrichment
 
@@ -636,15 +1658,12 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 - [x] Phase 5 results committed and pushed to GitHub
 - [x] Biomarker module scaffold
 - [x] `statsmodels` dependency added
+- [x] Biomarker discovery
+- [x] Cluster-vs-rest differential-expression testing
+- [x] Benjamini-Hochberg FDR correction
+- [x] Candidate biomarker ranking
 
 ### In Progress
-
-- [ ] Biomarker discovery
-- [ ] Cluster-vs-rest differential-expression testing
-- [ ] Benjamini-Hochberg FDR correction
-- [ ] Candidate biomarker ranking
-
-### Planned
 
 - [ ] PCA explained-variance analysis
 - [ ] PCA visualization
@@ -666,10 +1685,13 @@ cancer-subtype-discovery/
 ├── app/
 │
 ├── data/
-│   └── raw/
-│       ├── golub_dataset.zip
-│       ├── golub_expr.csv
-│       └── golub_labels.csv
+│   ├── raw/
+│   │   ├── golub_dataset.zip
+│   │   ├── golub_expr.csv
+│   │   └── golub_labels.csv
+│   │
+│   └── annotation/
+│       └── GPL80 annotation data/cache
 │
 ├── logs/
 │
@@ -678,15 +1700,34 @@ cancer-subtype-discovery/
 ├── notebooks/
 │
 ├── reports/
-│   └── validation/
-│       ├── ari_silhouette_results.csv
-│       ├── bootstrap_results.csv
-│       ├── consensus_k3_clusters.csv
-│       ├── gap_results.csv
-│       └── pac_results.csv
+│   ├── validation/
+│   │   ├── ari_silhouette_results.csv
+│   │   ├── bootstrap_results.csv
+│   │   ├── consensus_k3_clusters.csv
+│   │   ├── gap_results.csv
+│   │   └── pac_results.csv
+│   │
+│   └── biomarkers/
+│       ├── cluster_0_vs_rest.csv
+│       ├── cluster_1_vs_rest.csv
+│       ├── cluster_2_vs_rest.csv
+│       │
+│       ├── all_biomarker_results.csv
+│       ├── significant_biomarkers.csv
+│       ├── biomarker_summary.csv
+│       │
+│       ├── top20_candidates_per_cluster.csv
+│       ├── strong_candidates.csv
+│       ├── strong_candidates_annotated.csv
+│       │
+│       ├── top10_annotated_candidates_per_cluster.csv
+│       └── unmapped_strong_probes.csv
 │
 ├── scripts/
-│   └── run_phase5_validation.py
+│   ├── run_phase5_validation.py
+│   ├── run_phase6_biomarkers.py
+│   ├── annotate_phase6_probes.py
+│   └── finalize_phase6_biomarkers.py
 │
 ├── src/
 │   ├── biomarkers/
@@ -697,19 +1738,26 @@ cancer-subtype-discovery/
 │   │   ├── __init__.py
 │   │   └── core.py
 │   │
+│   ├── data/
+│   │
 │   ├── dimensionality/
 │   │   ├── __init__.py
 │   │   └── core.py
 │   │
 │   ├── enrichment/
+│   │
 │   ├── explainability/
+│   │
 │   ├── pipeline/
+│   │
 │   ├── preprocessing/
 │   │   ├── __init__.py
 │   │   └── core.py
 │   │
 │   ├── reporting/
+│   │
 │   ├── utils/
+│   │
 │   ├── validation/
 │   │   ├── __init__.py
 │   │   └── core.py
@@ -729,15 +1777,113 @@ cancer-subtype-discovery/
 │   ├── test_preprocessing.py
 │   └── test_validation.py
 │
+├── .gitignore
 ├── config.yaml
-├── requirements.txt
+├── LICENSE
 ├── README.md
-└── LICENSE
+└── requirements.txt
 ```
 
-The repository is intentionally modular so that statistical analysis, clustering, biological interpretation, reporting, and application code remain separated.
+### Structure by Phase
 
----
+```text
+Phase 1
+Data Loading & Validation
+        │
+        ├── src/data_loader.py
+        ├── src/exceptions.py
+        └── tests/test_data_loader.py
+
+
+Phase 2
+Preprocessing
+        │
+        ├── src/preprocessing/
+        └── tests/test_preprocessing.py
+
+
+Phase 3
+Dimensionality Reduction
+        │
+        ├── src/dimensionality/
+        └── tests/test_dimensionality.py
+
+
+Phase 4
+Clustering
+        │
+        ├── src/clustering/
+        └── tests/test_clustering.py
+
+
+Phase 5
+Cluster Validation
+        │
+        ├── src/validation/
+        ├── tests/test_validation.py
+        ├── scripts/run_phase5_validation.py
+        │
+        └── reports/validation/
+                │
+                ├── ari_silhouette_results.csv
+                ├── bootstrap_results.csv
+                ├── gap_results.csv
+                ├── pac_results.csv
+                └── consensus_k3_clusters.csv
+
+
+Phase 6
+Biomarker Discovery
+        │
+        ├── src/biomarkers/
+        │       │
+        │       ├── __init__.py
+        │       └── core.py
+        │
+        ├── tests/test_biomarkers.py
+        │
+        ├── scripts/
+        │       │
+        │       ├── run_phase6_biomarkers.py
+        │       ├── annotate_phase6_probes.py
+        │       └── finalize_phase6_biomarkers.py
+        │
+        └── reports/biomarkers/
+                │
+                ├── cluster_0_vs_rest.csv
+                ├── cluster_1_vs_rest.csv
+                ├── cluster_2_vs_rest.csv
+                ├── all_biomarker_results.csv
+                ├── significant_biomarkers.csv
+                ├── strong_candidates.csv
+                ├── strong_candidates_annotated.csv
+                ├── top10_annotated_candidates_per_cluster.csv
+                └── unmapped_strong_probes.csv
+
+
+Phase 7
+Pathway Enrichment
+        │
+        └── src/enrichment/
+              ⏳ Next Phase
+
+
+Phase 8
+Explainability
+        │
+        └── src/explainability/
+              ⏳ Planned
+
+
+Final Reporting / Application
+        │
+        ├── src/reporting/
+        ├── src/pipeline/
+        ├── app/
+        └── templates/
+              ⏳ Planned
+```
+
 
 ## Installation
 
@@ -749,6 +1895,23 @@ The repository is intentionally modular so that statistical analysis, clustering
 - Virtual-environment support
 
 The current development environment has also been tested with Python 3.13.
+
+
+### Main Python Dependencies
+
+The project uses the following major libraries:
+
+```text
+pandas
+numpy
+scipy
+scikit-learn
+statsmodels
+GEOparse
+PyYAML
+pytest
+pytest-cov
+```
 
 ### Clone the repository
 
@@ -1021,8 +2184,8 @@ The purpose of the current work is:
 [x] Consensus k=3 exploratory partition
 [x] Phase 5 result export
 [x] 80-test regression suite
+[x] Biomarker discovery
 
-[ ] Biomarker discovery
 [ ] Mann-Whitney testing
 [ ] BH-FDR correction
 [ ] Candidate marker ranking
@@ -1091,8 +2254,8 @@ Phase 2 — Preprocessing                 ✅
 Phase 3 — PCA                           ✅
 Phase 4 — Clustering                    ✅
 Phase 5 — Cluster validation            ✅
-Phase 6 — Biomarker discovery           🚧 In Progress
-Phase 7 — Pathway enrichment            ⏳ Planned
+Phase 6 — Biomarker discovery           ✅
+Phase 7 — Pathway enrichment            🚧 In Progress
 Phase 8 — Explainability                ⏳ Planned
 Phase 9 — Reporting / application       ⏳ Planned
 ```
