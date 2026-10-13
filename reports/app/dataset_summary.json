@@ -1,0 +1,29 @@
+{
+  "dataset": "Golub leukemia",
+  "group": "G87",
+  "samples": 72,
+  "probes": 7129,
+  "selected_probes": 2000,
+  "pca_components": 30,
+  "seed": 42,
+  "known_labels": {
+    "ALL": 47,
+    "AML": 25
+  },
+  "quality": {
+    "missing_values": 0,
+    "duplicate_sample_ids": 0,
+    "non_numeric_columns": 0,
+    "constant_probes": 0,
+    "negative_values": 147174,
+    "aligned_samples": true
+  },
+  "generated_at": "2026-10-09T09:26:09.920080+00:00",
+  "source_commit": "4a9ace55adfadc7f78d76e6b08b427a13f990861",
+  "source_sha256": {
+    "data/raw/golub_expr.csv": "7f2e35024daa2bd66f904a0c73ec274708b9c4f7e136cb18cb14d5ad82a317fc",
+    "data/raw/golub_labels.csv": "b54db04df8d26dfdc34f7b79ffaaa86a1ba9d04e67f8ed54a23a8c22d3639ffb",
+    "config.yaml": "7f0fbb19d0a2f16a78cbba23f89ec554c9d4dd8ccb0a5f560d8848f3f5dcff99",
+    "reports/validation/consensus_k3_clusters.csv": "180f540c28613e636b3f031265e4fe49f8b0d12adeb72b7d134b9f0b3324e4bd"
+  }
+}
