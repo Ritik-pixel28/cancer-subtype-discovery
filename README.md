@@ -8,6 +8,17 @@ The initial reference dataset is the **Golub et al. leukemia gene-expression dat
 
 ---
 
+## Phase 9 — Molecular Discovery Explorer
+
+A cinematic molecular landing page leads into twelve research modules: dataset and preprocessing exploration, 2D/3D PCA, cluster discovery, validation, biomarkers, optional Phase 7/8 interpretation, comparisons, PDF/HTML reporting and reproducibility. The landing animation uses the published 1BNA DNA structure. Scientific values come from validated project artifacts.
+
+```sh
+python -m pip install -r requirements-app.txt
+python -m streamlit run app/streamlit_app.py
+```
+
+See [PHASE9.md](PHASE9.md) for complete setup, contracts, limitations and deployment notes. Phase 7/8 analyses and the original consensus matrix are not fabricated when missing.
+
 ## Overview
 
 The goal of this project is to build an end-to-end and reproducible pipeline for discovering, validating, and biologically interpreting molecular subgroups from gene-expression data.
@@ -1666,7 +1677,7 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 ### In Progress
 
 - [ ] PCA explained-variance analysis
-- [ ] PCA visualization
+- [x] PCA visualization
 - [ ] UMAP visualization
 - [ ] Pathway enrichment
 - [ ] Biological interpretation
@@ -2189,13 +2200,13 @@ The purpose of the current work is:
 [ ] Mann-Whitney testing
 [ ] BH-FDR correction
 [ ] Candidate marker ranking
-[ ] PCA visualization
+[x] PCA visualization
 [ ] UMAP
 [ ] Pathway enrichment
 [ ] Biological interpretation
 [ ] Explainability / SHAP
-[ ] Automated reporting
-[ ] Streamlit application
+[x] Automated reporting (HTML/ZIP)
+[x] Streamlit application
 [ ] End-to-end pipeline
 ```
 
@@ -2257,7 +2268,7 @@ Phase 5 — Cluster validation            ✅
 Phase 6 — Biomarker discovery           ✅
 Phase 7 — Pathway enrichment            🚧 In Progress
 Phase 8 — Explainability                ⏳ Planned
-Phase 9 — Reporting / application       ⏳ Planned
+Phase 9 — Reporting / application       ✅ Local app available
 ```
 
 Phase 5 has produced an exploratory `k=3` consensus partition for downstream analysis.
@@ -2265,3 +2276,12 @@ Phase 5 has produced an exploratory `k=3` consensus partition for downstream ana
 Phase 6 is now beginning with statistical identification of genes that distinguish the discovered clusters.
 
 The project remains an exploratory research pipeline and does not currently make clinical or diagnostic claims.
+### Start the dashboard reliably
+
+From this repository folder run:
+
+```sh
+python run.py
+```
+
+Open http://127.0.0.1:8509. The launcher selects the complete project environment; a bare `streamlit` command may select a different Anaconda installation without the PDF dependencies. `python run.py --check` checks the selected environment without starting the website.
