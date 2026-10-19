@@ -410,3 +410,22 @@ class ResearchData:
             "phase7": self.status.get("pathways"),
             "phase8": self.status.get("importance"),
         }
+
+    def phase8_characterization(self):
+        """Load Phase 8 subtype characterization and cross-cluster comparisons if available."""
+        path = self.root / "reports/phase8/subtype_characterization_summary.csv"
+        if not path.is_file():
+            return None
+        try:
+            summary = pd.read_csv(path)
+            cross_path = self.root / "reports/phase8/cross_cluster_comparison.csv"
+            cross = pd.read_csv(cross_path) if cross_path.is_file() else pd.DataFrame()
+            meta_path = self.root / "reports/phase8/phase8_run_metadata.json"
+            meta = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.is_file() else {}
+            return {
+                "summary": summary,
+                "comparison": cross,
+                "metadata": meta,
+            }
+        except Exception:
+            return None

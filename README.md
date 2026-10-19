@@ -1679,11 +1679,11 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 - [ ] PCA explained-variance analysis
 - [x] PCA visualization
 - [ ] UMAP visualization
-- [ ] Pathway enrichment
-- [ ] Biological interpretation
+- [x] Pathway enrichment
+- [x] Biological interpretation
 - [ ] SHAP explainability
-- [ ] Automated report generation
-- [ ] Streamlit interface
+- [x] Automated report generation
+- [x] Streamlit interface
 - [ ] End-to-end production pipeline
 
 ---
@@ -2266,14 +2266,18 @@ Phase 3 — PCA                           ✅
 Phase 4 — Clustering                    ✅
 Phase 5 — Cluster validation            ✅
 Phase 6 — Biomarker discovery           ✅
-Phase 7 — Pathway enrichment            🚧 In Progress
-Phase 8 — Explainability                ⏳ Planned
+Phase 7 — Pathway enrichment            ✅ Complete
+Phase 8 — Subtype characterization      ✅ Complete
 Phase 9 — Reporting / application       ✅ Local app available
 ```
 
 Phase 5 has produced an exploratory `k=3` consensus partition for downstream analysis.
 
-Phase 6 is now beginning with statistical identification of genes that distinguish the discovered clusters.
+Phase 6 performed statistical identification of genes that distinguish the discovered clusters.
+
+Phase 7 performed background-aware over-representation analysis (ORA) across four pathway libraries.
+
+Phase 8 synthesized these findings into an integrated biological interpretation and subtype characterization layer.
 
 The project remains an exploratory research pipeline and does not currently make clinical or diagnostic claims.
 ### Start the dashboard reliably
@@ -2317,4 +2321,56 @@ Results are stored in `reports/enrichment/`, including all pathway results, sign
 ### Run
 Run `python scripts/run_phase7_enrichment.py` from the project root. The script requires the Phase 6 biomarker results, GPL80 annotation, and four configured GMT files under `data/annotation/gene_sets/`.
 
-**Phase 7 computational implementation and execution: complete.** Biological interpretation remains a follow-up task.
+---
+
+## Phase 8: Integrated Biological Interpretation and Subtype Characterization
+
+Phase 8 integrates discovered clusters (Phase 5), biomarker candidates (Phase 6), and pathway enrichment profiles (Phase 7) into a unified computational interpretation and characterization layer.
+
+### Objectives
+- Characterize the biological and phenotypic properties of the discovered Consensus $k=3$ subgroups.
+- Integrate biomarker statistics (effect size, FDR, median difference, direction) with probe-to-gene annotations.
+- Synthesize pathway enrichment findings and evaluate underlying cellular mechanisms.
+- Conduct rigorous cross-cluster statistical comparisons (Fisher's exact tests for known ALL/AML composition, biomarker Jaccard overlap, PCA centroid distances).
+- Formulate an evidence-based tiered scientific interpretation distinguishing directly observed data, statistical associations, biological hypotheses, and validation requirements.
+
+### Scientific Findings by Subgroup
+1. **Cluster 0 (n = 14, 19.4%): Pure ALL / Subgroup Associated with High Ribosomal & Metabolic Gene Expression**
+   - **Phenotypic alignment:** 100% ALL (14/14), 0% AML. Complete absence of AML yields a zero cell in contingency testing ($p = 6.46 \times 10^{-6}$ vs Cluster 2).
+   - **Biomarkers:** 743 FDR-significant probes, 123 strong candidates ($|r_{\text{rb}}| \ge 0.8$, 119 higher, 4 lower). Top markers include *CBFB*, *FABP5*, *YWHAQ*, *HNRNPU*, *ESD*.
+   - **Pathways:** 254 significant terms (11 KEGG, 174 Reactome, 4 Hallmark, 65 GO BP). Statistically over-represented for ribosomal translation initiation, proteasome components (*PSMA*/*PSMB*), oxidative phosphorylation, and *MYC* targets.
+2. **Cluster 1 (n = 35, 48.6%): Dominant Intermediate / Broad Transcriptional Variation Subgroup**
+   - **Phenotypic alignment:** 27 ALL (77.1%), 8 AML (22.9%).
+   - **Biomarkers:** 1,192 FDR-significant probes, 16 strong candidates (3 higher, 13 lower). Top markers include *MLF2*, *AAMP*, *ARHGEF2*, *PKLR*.
+   - **Pathways:** 0 significant terms at library-wide FDR $\le 0.05$, reflecting broad transcriptional modulation across lymphoid and myeloid backgrounds without a singular dominant pathway signature.
+3. **Cluster 2 (n = 23, 31.9%): Myeloid-Enriched / AML Predominant Subgroup**
+   - **Phenotypic alignment:** 17 AML (73.9%), 6 ALL (26.1%). Highly significant enrichment for AML relative to Cluster 1 (Odds Ratio = 9.56, $p = 1.63 \times 10^{-4}$) and Cluster 0 ($p = 6.46 \times 10^{-6}$).
+   - **Biomarkers:** 933 FDR-significant probes, 44 strong candidates (24 higher, 20 lower). Top markers include *HTT*, *GOLGA2*, *ADAM15*, *PIK3R2*, *ACOX2*.
+   - **Pathways:** 0 significant terms at library-wide FDR $\le 0.05$ after background adjustment, despite clear differential expression of individual myeloid candidate genes.
+
+### Cross-Cluster Comparison
+- **ALL/AML Contingency:** Fisher's exact tests confirm robust separation of AML predominance in Cluster 2 versus pure ALL in Cluster 0. Zero AML in Cluster 0 produces an infinite odds ratio (+∞) due to a zero cell in the 2×2 table.
+- **Biomarker Overlap:** Jaccard similarity of FDR-significant probes is 0.276 between Cluster 0 and 1, 0.142 between Cluster 0 and 2, and 0.481 between Cluster 1 and 2.
+- **PCA Centroid Distances:** Euclidean distance in (PC1, PC2, PC3) space is 38.17 (C0 vs C1), 38.24 (C0 vs C2), and 33.41 (C1 vs C2).
+
+### Evidentiary Tiers & Scientific Limitations
+- **Tier 1 (Direct Observations):** Exact sample counts, label distributions, biomarker test results, pathway counts.
+- **Tier 2 (Statistical Associations):** Significance under non-parametric tests (Mann-Whitney U), BH-FDR correction, Fisher's exact contingency tests, and hypergeometric ORA.
+- **Tier 3 (Biological Interpretations):** Putative elevated translational and biosynthetic expression in Cluster 0 ALL blasts; expected lineage-associated divergence in Cluster 2.
+- **Tier 4 (Validation Hypotheses):** Cohort generalizability in independent external datasets; cross-platform validation using modern RNA-seq; orthogonal molecular verification via RT-qPCR/proteomics.
+- **Limitations:** Small historical cohort ($n = 72$), legacy Hu6800 platform, no longitudinal clinical survival or outcome annotations. The study does not infer patient prognosis, therapeutic response, or clinical utility.
+
+### Output Artifacts (`reports/phase8/`)
+- `subtype_characterization_summary.csv`: Cluster-level summary metrics.
+- `cluster_biomarker_summary.csv`: Annotated candidate biomarkers with effect sizes and directions.
+- `cluster_pathway_summary.csv`: Significant pathway enrichments per cluster.
+- `cross_cluster_comparison.csv`: Formal statistical comparisons between clusters.
+- `subtype_characterization_report.md`: Complete evidence-based scientific report.
+- `phase8_run_metadata.json`: Provenance metadata, input checksums, environment parameters.
+- `figures/`: High-resolution figures (`cluster_sample_distribution.png`, `biomarker_counts_by_cluster.png`, `pathway_enrichment_counts_by_cluster.png`, `top_biomarkers_effect_size.png`, `top_pathways_cluster0.png`, `cross_cluster_pca_distribution.png`).
+
+### Execution
+```sh
+# Run Phase 8 analysis from repository root
+python scripts/run_phase8_characterization.py
+```

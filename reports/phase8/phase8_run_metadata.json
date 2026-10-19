@@ -1,0 +1,75 @@
+{
+  "phase": 8,
+  "title": "Integrated Biological Interpretation and Subtype Characterization",
+  "run_timestamp_utc": "2026-10-19T10:25:19.710899+00:00",
+  "inputs": {
+    "clusters": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/validation/consensus_k3_clusters.csv",
+      "sha256": "180f540c28613e636b3f031265e4fe49f8b0d12adeb72b7d134b9f0b3324e4bd",
+      "size_bytes": 369
+    },
+    "labels": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/data/raw/golub_labels.csv",
+      "sha256": "b54db04df8d26dfdc34f7b79ffaaa86a1ba9d04e67f8ed54a23a8c22d3639ffb",
+      "size_bytes": 809
+    },
+    "pca": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/app/pca.csv",
+      "sha256": "112da109bc5e6af20eee6ccdea898723f865810a90ed140620c6aaf91d2900be",
+      "size_bytes": 41871
+    },
+    "biomarkers": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/biomarkers/all_biomarker_results.csv",
+      "sha256": "3e905a2365265d3fd4087227b458b35e41451e8ecb1fe3cc39b51027f33e4f97",
+      "size_bytes": 632307
+    },
+    "strong_candidates": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/biomarkers/strong_candidates_annotated.csv",
+      "sha256": "526ac9cf138f8b7bac897b2c684ec4769c1c8f77695e1bdd046b04d2e17113ee",
+      "size_bytes": 32066
+    },
+    "enrichment_all": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/enrichment/enrichment_all_results.csv",
+      "sha256": "f7a491f71a49436492e0b837a6565d27e80d521ffc615c6321822cee00a08b2d",
+      "size_bytes": 1839922
+    },
+    "enrichment_sig": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/enrichment/enrichment_significant_results.csv",
+      "sha256": "d860a17e71f3700957a21499edddc4d34b6d12074737ac4f7a50db5d5da8ca05",
+      "size_bytes": 88891
+    },
+    "enrichment_summary": {
+      "path": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/enrichment/enrichment_summary.csv",
+      "sha256": "b1af945b2947b50aa0f60caf4f95a97d9c71729f638fd359b6b16ec276c88082",
+      "size_bytes": 337
+    }
+  },
+  "outputs": {
+    "subtype_characterization_summary": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/subtype_characterization_summary.csv",
+    "cluster_biomarker_summary": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/cluster_biomarker_summary.csv",
+    "cluster_pathway_summary": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/cluster_pathway_summary.csv",
+    "cross_cluster_comparison": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/cross_cluster_comparison.csv",
+    "subtype_characterization_report": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/subtype_characterization_report.md",
+    "figures": {
+      "sample_distribution": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/figures/cluster_sample_distribution.png",
+      "biomarker_counts": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/figures/biomarker_counts_by_cluster.png",
+      "pathway_counts": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/figures/pathway_enrichment_counts_by_cluster.png",
+      "biomarkers_effect_size": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/figures/top_biomarkers_effect_size.png",
+      "pathways_cluster0": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/figures/top_pathways_cluster0.png",
+      "pca_distribution": "/Users/prakharjoshi.../cancer-subtype-discovery/reports/phase8/figures/cross_cluster_pca_distribution.png"
+    }
+  },
+  "parameters": {
+    "fdr_threshold": 0.05,
+    "strong_rank_biserial_threshold": 0.8,
+    "multiple_testing": "Benjamini-Hochberg (inherited from Phase 6 and 7)",
+    "contingency_test": "Two-sided Fisher's Exact Test"
+  },
+  "software_versions": {
+    "python": "3.13.7 (v3.13.7:bcee1c32211, Aug 14 2025, 19:10:51) [Clang 16.0.0 (clang-1600.0.26.6)]",
+    "numpy": "2.4.1",
+    "pandas": "3.0.0",
+    "matplotlib": "3.11.2"
+  },
+  "status": "COMPLETED"
+}

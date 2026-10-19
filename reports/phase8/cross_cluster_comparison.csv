@@ -1,0 +1,4 @@
+comparison,cluster_a,cluster_b,samples_a,samples_b,phenotype_contingency,fisher_odds_ratio,fisher_exact_p_value,shared_significant_probes,union_significant_probes,biomarker_jaccard_similarity,shared_strong_candidate_probes,pca_centroid_euclidean_distance
+Cluster 0 vs Cluster 1,0,1,14,35,ALL: 14 vs 27 | AML: 0 vs 8,inf,0.08547825472292483,419,1516,0.2764,0,38.1742
+Cluster 0 vs Cluster 2,0,2,14,23,ALL: 14 vs 6 | AML: 0 vs 17,inf,6.4580709742000065e-06,208,1468,0.1417,0,38.2444
+Cluster 1 vs Cluster 2,1,2,35,23,ALL: 27 vs 6 | AML: 8 vs 17,9.5625,0.00016261940407480947,690,1435,0.4808,3,33.409

@@ -1,0 +1,184 @@
+cluster,gene,gene_symbol,gene_title,entrez_gene_id,direction,rank_biserial,median_difference,mann_whitney_u,p_value,fdr,annotation_status
+0,L20298_at,CBFB,"core-binding factor, beta subunit",865,higher,0.9433497536945812,1570.0,789.0,5.258356058824705e-08,1.3523569741371629e-05,unambiguous
+0,M94856_at,FABP5,fatty acid binding protein 5 (psoriasis-associated),2171,higher,0.937192118226601,1129.5,786.5,6.415424361620215e-08,1.3523569741371629e-05,unambiguous
+0,X56468_at,YWHAQ,"tyrosine 3-monooxygenase/tryptophan 5-monooxygenase activation protein, theta",10971,higher,0.9359605911330048,2338.5,786.0,6.675099639576382e-08,1.3523569741371629e-05,unambiguous
+0,X65488_at,HNRNPU,heterogeneous nuclear ribonucleoprotein U (scaffold attachment factor A),3192,higher,0.9359605911330048,1020.5,786.0,6.675099639576382e-08,1.3523569741371629e-05,unambiguous
+0,M13450_at,ESD,esterase D,2098,higher,0.9310344827586208,1422.0,784.0,7.823151717505388e-08,1.3523569741371629e-05,unambiguous
+0,X05855_s_at,H3F3A /// H3F3AP4 /// H3F3B,"H3 histone, family 3A /// H3 histone, family 3A, pseudogene 4 /// H3 histone, family 3B (H3.3B)",3020 /// 3021 /// 440926,higher,0.9285714285714286,1538.0,783.0,8.4626647691724e-08,1.3523569741371629e-05,ambiguous
+0,U20998_at,SRP9,signal recognition particle 9kDa,6726,higher,0.9285714285714286,1549.0,783.0,8.4626647691724e-08,1.3523569741371629e-05,unambiguous
+0,M93651_at,SET /// SETSIP,SET nuclear proto-oncogene /// SET-like protein,6418 /// 646817,higher,0.9261083743842364,1798.0,782.0,9.154848679561501e-08,1.3523569741371629e-05,ambiguous
+0,X13238_at,COX6C,cytochrome c oxidase subunit VIc,1345,higher,0.9261083743842364,1584.0,782.0,9.154848679561501e-08,1.3523569741371629e-05,unambiguous
+0,D55654_at,MDH1,"malate dehydrogenase 1, NAD (soluble)",4190,higher,0.9261083743842364,1838.5,782.0,9.157018918663385e-08,1.3523569741371629e-05,unambiguous
+0,D38551_at,RAD21,RAD21 homolog (S. pombe),5885,higher,0.9236453201970444,561.5,781.0,9.87371711211808e-08,1.3523569741371629e-05,unambiguous
+0,M21259_at,SNRPE,small nuclear ribonucleoprotein polypeptide E,6635,higher,0.9236453201970444,1675.5,781.0,9.904037246477852e-08,1.3523569741371629e-05,unambiguous
+0,D14710_at,ATP5A1,"ATP synthase, H+ transporting, mitochondrial F1 complex, alpha subunit 1, cardiac muscle",498,higher,0.9211822660098524,3046.0,780.0,1.0709891801571505e-07,1.3523569741371629e-05,unambiguous
+0,Z23064_at,LOC101928747 /// RBMX /// SNORD61,"uncharacterized LOC101928747 /// RNA binding motif protein, X-linked /// small nucleolar RNA, C/D box 61",26787 /// 27316 /// 101928747,higher,0.91871921182266,824.0,779.0,1.1568236274396805e-07,1.3523569741371629e-05,ambiguous
+0,D13370_at,APEX1,APEX nuclease (multifunctional DNA repair enzyme) 1,328,higher,0.91871921182266,1331.5,779.0,1.1570936548864537e-07,1.3523569741371629e-05,unambiguous
+0,M16342_at,HNRNPC,heterogeneous nuclear ribonucleoprotein C (C1/C2),3183,higher,0.91871921182266,1023.0,779.0,1.157363736809565e-07,1.3523569741371629e-05,unambiguous
+0,X52851_rna1_at,LOC101060363 /// PPIA /// PPIAL4G,peptidyl-prolyl cis-trans isomerase A-like /// peptidylprolyl isomerase A (cyclophilin A) /// peptidylprolyl isomerase A (cyclophilin A)-like 4G,5478 /// 644591 /// 101060363,higher,0.916256157635468,5988.0,778.0,1.2516265341931252e-07,1.3523569741371629e-05,ambiguous
+0,M91432_at,ACADM,"acyl-CoA dehydrogenase, C-4 to C-12 straight chain",34,higher,0.916256157635468,1000.0,778.0,1.2516265341931252e-07,1.3523569741371629e-05,unambiguous
+0,D63881_at,SUZ12,SUZ12 polycomb repressive complex 2 subunit,23512,higher,0.9137931034482758,732.0,777.0,1.35204467481598e-07,1.3523569741371629e-05,unambiguous
+0,X99585_at,LOC101929087 /// SUMO2 /// SUMO3,small ubiquitin-related modifier 2-like /// small ubiquitin-like modifier 2 /// small ubiquitin-like modifier 3,6612 /// 6613 /// 101929087,higher,0.9137931034482758,696.5,777.0,1.352356974137163e-07,1.3523569741371629e-05,ambiguous
+0,M60858_rna1_at,NCL,nucleolin,4691,higher,0.9088669950738916,2953.5,775.0,1.5789542982868e-07,1.3640235560589352e-05,unambiguous
+0,HG1322-HT5143_s_at,,,,higher,0.9088669950738916,2871.0,775.0,1.5789542982868e-07,1.3640235560589352e-05,unmapped
+0,D50063_at,PSMD7,"proteasome (prosome, macropain) 26S subunit, non-ATPase, 7",5713,higher,0.9088669950738916,523.5,775.0,1.5789542982868e-07,1.3640235560589352e-05,unambiguous
+0,S72008_at,SEPT7,septin 7,989,higher,0.9064039408866996,959.0,774.0,1.7042543459690118e-07,1.3640235560589352e-05,unambiguous
+0,X52882_at,SNORA29 /// TCP1,"small nucleolar RNA, H/ACA box 29 /// t-complex 1",6950 /// 677812,higher,0.9064039408866996,1189.5,774.0,1.705029445073669e-07,1.3640235560589352e-05,ambiguous
+0,U83843_at,CCT7,"chaperonin containing TCP1, subunit 7 (eta)",10574,higher,0.9014778325123152,638.0,772.0,1.987027570371852e-07,1.4309058574582713e-05,unambiguous
+0,X92106_at,BLMH,bleomycin hydrolase,642,higher,0.9014778325123152,363.0,772.0,1.9874746270443218e-07,1.4309058574582713e-05,unambiguous
+0,X85372_at,SNRPF,small nuclear ribonucleoprotein polypeptide F,6636,higher,0.8990147783251232,909.5,771.0,2.1458785757241817e-07,1.4309058574582713e-05,unambiguous
+0,U51678_at,C11orf58,chromosome 11 open reading frame 58,10944,higher,0.8990147783251232,889.0,771.0,2.1458785757241817e-07,1.4309058574582713e-05,unambiguous
+0,M19311_s_at,CALM1 /// CALM2 /// CALM3,"calmodulin 1 (phosphorylase kinase, delta) /// calmodulin 2 (phosphorylase kinase, delta) /// calmodulin 3 (phosphorylase kinase, delta)",801 /// 805 /// 808,higher,0.8990147783251232,4369.0,771.0,2.1463587861874065e-07,1.4309058574582713e-05,ambiguous
+0,X64330_at,ACLY,ATP citrate lyase,47,higher,0.896551724137931,588.5,770.0,2.3164473981355449e-07,1.4572690114993469e-05,unambiguous
+0,X85373_at,SNRPG,small nuclear ribonucleoprotein polypeptide G,6637,higher,0.8940886699507389,681.5,769.0,2.4978647116986984e-07,1.4572690114993469e-05,unambiguous
+0,D49738_at,TBCB,tubulin folding cofactor B,1155,higher,0.8940886699507389,743.5,769.0,2.498417801291311e-07,1.4572690114993469e-05,unambiguous
+0,M19483_at,ATP5B,"ATP synthase, H+ transporting, mitochondrial F1 complex, beta polypeptide",506,higher,0.8940886699507389,2316.5,769.0,2.4995242953754146e-07,1.4572690114993469e-05,unambiguous
+0,D85758_at,ERH,enhancer of rudimentary homolog (Drosophila),2079,higher,0.8916256157635467,937.0,768.0,2.6953540548342285e-07,1.4572690114993469e-05,unambiguous
+0,X94232_at,MAPRE2,"microtubule-associated protein, RP/EB family, member 2",10982,higher,0.8916256157635467,632.5,768.0,2.6953540548342285e-07,1.4572690114993469e-05,unambiguous
+0,L24804_at,PTGES3,prostaglandin E synthase 3 (cytosolic),10728,higher,0.8916256157635467,582.5,768.0,2.695947671273792e-07,1.4572690114993469e-05,unambiguous
+0,X72841_at,RBBP7,retinoblastoma binding protein 7,5931,higher,0.8891625615763548,619.0,767.0,2.9066066830799264e-07,1.529792991094698e-05,unambiguous
+0,M88108_at,KHDRBS1,"KH domain containing, RNA binding, signal transduction associated 1",10657,higher,0.8879310344827587,1029.0,766.5,3.019133003813104e-07,1.5482733352887712e-05,unambiguous
+0,X74262_at,RBBP4,retinoblastoma binding protein 4,5928,higher,0.8866995073891626,1298.0,766.0,3.134492145379939e-07,1.5672460726899694e-05,unambiguous
+0,M37104_at,ATP5J,"ATP synthase, H+ transporting, mitochondrial Fo complex, subunit F6",522,higher,0.8854679802955665,550.5,765.5,3.254810517280214e-07,1.572920633774199e-05,unambiguous
+0,X15341_at,COX6A1,cytochrome c oxidase subunit VIa polypeptide 1,1337,higher,0.8842364532019704,2660.0,765.0,3.3810466683113644e-07,1.572920633774199e-05,unambiguous
+0,Y10807_s_at,PRMT1,protein arginine methyltransferase 1,3276,higher,0.8842364532019704,1530.0,765.0,3.381779362614527e-07,1.572920633774199e-05,unambiguous
+0,M30938_at,XRCC5,X-ray repair complementing defective repair in Chinese hamster cells 5 (double-strand-break rejoining),7520,higher,0.8817733990147782,1282.0,764.0,3.644691467253253e-07,1.6202120168390153e-05,unambiguous
+0,U02493_at,NONO,"non-POU domain containing, octamer-binding",4841,higher,0.8817733990147782,3421.5,764.0,3.645477037887784e-07,1.6202120168390153e-05,unambiguous
+0,L20010_at,HCFC1,host cell factor C1,3054,higher,0.8793103448275863,793.5,763.0,3.928124530259674e-07,1.6719006876882717e-05,unambiguous
+0,L07633_at,PSME1,"proteasome (prosome, macropain) activator subunit 1 (PA28 alpha)",5720,higher,0.8793103448275863,2444.0,763.0,3.928966616067438e-07,1.6719006876882717e-05,unambiguous
+0,D80006_at,MOB1A,MOB kinase activator 1A,55233,higher,0.8768472906403941,851.0,762.0,4.230964954044112e-07,1.7629020641850466e-05,unambiguous
+0,M64992_at,PSMA1,"proteasome (prosome, macropain) subunit, alpha type, 1",5682,higher,0.8719211822660098,679.0,760.0,4.911883376185492e-07,1.959564054669749e-05,unambiguous
+0,X13794_rna1_at,LDHB,lactate dehydrogenase B,3945,higher,0.8719211822660098,3579.0,760.0,4.912919285090846e-07,1.959564054669749e-05,unambiguous
+0,U96915_at,SAP18,"Sin3A-associated protein, 18kDa",10284,higher,0.8694581280788178,1157.5,759.0,5.289713447862764e-07,1.959564054669749e-05,unambiguous
+0,U72342_at,PAFAH1B1,"platelet-activating factor acetylhydrolase 1b, regulatory subunit 1 (45kDa)",5048,higher,0.8694581280788178,657.0,759.0,5.289713447862764e-07,1.959564054669749e-05,unambiguous
+0,X52979_rna1_s_at,SNRPB,small nuclear ribonucleoprotein polypeptides B and B1,6628,higher,0.8694581280788178,1394.5,759.0,5.290822947608322e-07,1.959564054669749e-05,unambiguous
+0,J04617_s_at,EEF1A1,eukaryotic translation elongation factor 1 alpha 1,1915,lower,-0.8694581280788177,-7828.5,53.0,5.290822947608322e-07,1.959564054669749e-05,unambiguous
+0,D80012_at,USP10,ubiquitin specific peptidase 10,9100,higher,0.8669950738916257,544.0,758.0,5.693115686453752e-07,1.998417962290831e-05,unambiguous
+0,M81601_at,TCEA1,"transcription elongation factor A (SII), 1",6917,higher,0.8669950738916257,1033.0,758.0,5.695491192528869e-07,1.998417962290831e-05,unambiguous
+0,D31890_at,KARS,lysyl-tRNA synthetase,3735,higher,0.8669950738916257,1088.5,758.0,5.695491192528869e-07,1.998417962290831e-05,unambiguous
+0,U24704_at,PSMD4,"proteasome (prosome, macropain) 26S subunit, non-ATPase, 4",5710,higher,0.8645320197044335,365.0,757.0,6.132467587542478e-07,2.1146439957043023e-05,unambiguous
+0,M31642_at,HPRT1,hypoxanthine phosphoribosyltransferase 1,3251,higher,0.8620689655172413,734.0,756.0,6.597578080539187e-07,2.1640330177813827e-05,unambiguous
+0,HG4297-HT4567_at,,,,higher,0.8620689655172413,986.0,756.0,6.598939273487069e-07,2.1640330177813827e-05,unmapped
+0,U38846_at,CCT4,"chaperonin containing TCP1, subunit 4 (delta)",10575,higher,0.8620689655172413,2015.5,756.0,6.600300704233217e-07,2.1640330177813827e-05,unambiguous
+0,X74801_at,CCT3 /// LOC101927137,"chaperonin containing TCP1, subunit 3 (gamma) /// uncharacterized LOC101927137",7203 /// 101927137,higher,0.8608374384236452,1083.5,755.5,6.842708388994886e-07,2.1731823680240024e-05,ambiguous
+0,Z29505_at,PCBP1,poly(rC) binding protein 1,5093,higher,0.8608374384236452,2008.5,755.5,6.845524459275607e-07,2.1731823680240024e-05,unambiguous
+0,M97856_at,NASP,nuclear autoantigenic sperm protein (histone-binding),4678,higher,0.8596059113300492,636.0,755.0,7.098063297760638e-07,2.1853640911932384e-05,unambiguous
+0,V00572_at,PGK1,phosphoglycerate kinase 1,5230,higher,0.8596059113300492,2602.5,755.0,7.102433296378025e-07,2.1853640911932384e-05,unambiguous
+0,U77456_at,NAP1L4,nucleosome assembly protein 1-like 4,4676,higher,0.8571428571428572,749.5,754.0,7.638153674588325e-07,2.2805110991286104e-05,unambiguous
+0,U30825_at,GATC /// SRSF9,"glutamyl-tRNA(Gln) amidotransferase, subunit C /// serine/arginine-rich splicing factor 9",8683 /// 283459,higher,0.8571428571428572,1203.0,754.0,7.639712182080846e-07,2.2805110991286104e-05,ambiguous
+0,U68723_at,FOXN3,forkhead box N3,1112,higher,0.854679802955665,388.5,753.0,8.214378373886492e-07,2.348394207612233e-05,unambiguous
+0,HG1112-HT1112_at,,,,higher,0.854679802955665,1353.0,753.0,8.217712323493865e-07,2.348394207612233e-05,unmapped
+0,X15822_at,COX7A2,cytochrome c oxidase subunit VIIa polypeptide 2 (liver),1347,higher,0.854679802955665,1825.0,753.0,8.219379726642817e-07,2.348394207612233e-05,unambiguous
+0,U14973_at,RPS29,ribosomal protein S29,6235,lower,-0.8522167487684729,-4216.5,60.0,8.839496175929769e-07,2.489998922797118e-05,unambiguous
+0,Z25521_s_at,CD47,CD47 molecule,961,higher,0.8497536945812807,1070.5,751.0,9.50263141875203e-07,2.6396198385422303e-05,unambiguous
+0,L40391_at,TMED10,transmembrane emp24-like trafficking protein 10 (yeast),10972,higher,0.8485221674876848,973.0,750.5,9.850927729978446e-07,2.698884309583136e-05,unambiguous
+0,D87078_at,PUM2,pumilio RNA-binding family member 2,23369,higher,0.8472906403940887,866.0,750.0,1.0211502074339095e-06,2.7598654254970535e-05,unambiguous
+0,D13315_at,GLO1,glyoxalase I,2739,higher,0.8448275862068966,589.5,749.0,1.0977687698661551e-06,2.927383386309747e-05,unambiguous
+0,M29064_at,HNRNPA2B1,heterogeneous nuclear ribonucleoprotein A2/B1,3181,higher,0.8423645320197044,1190.5,748.0,1.1801355403298792e-06,3.1056198429733665e-05,unambiguous
+0,D63874_at,HMGB1,high mobility group box 1,3146,higher,0.8399014778325122,6648.5,747.0,1.2676824908947734e-06,3.292681794531879e-05,unambiguous
+0,L06499_at,RPL37A,ribosomal protein L37a,6168,lower,-0.8374384236453202,-8969.0,66.0,1.3619920828509938e-06,3.492287391925625e-05,unambiguous
+0,L37127_at,POLR2J,"polymerase (RNA) II (DNA directed) polypeptide J, 13.3kDa",5439,higher,0.8349753694581281,481.0,745.0,1.4624612878752955e-06,3.702433640190622e-05,unambiguous
+0,U54778_at,YWHAE,"tyrosine 3-monooxygenase/tryptophan 5-monooxygenase activation protein, epsilon",7531,higher,0.8325123152709359,963.5,744.0,1.570341178926146e-06,3.925852947315365e-05,unambiguous
+0,X89399_s_at,ARHGDIB,Rho GDP dissociation inhibitor (GDI) beta,397,higher,0.8300492610837438,2387.5,743.0,1.6861728101031812e-06,4.1126166100077586e-05,unambiguous
+0,hum_alu_at,,,,lower,-0.8300492610837439,-9338.5,69.0,1.6861728101031812e-06,4.1126166100077586e-05,unmapped
+0,D80005_at,FAM120A,family with sequence similarity 120A,23196,higher,0.8288177339901477,692.0,742.5,1.7452885316072473e-06,4.16056494992454e-05,unambiguous
+0,D00763_at,PSMA4,"proteasome (prosome, macropain) subunit, alpha type, 4",5685,higher,0.8275862068965518,1255.5,742.0,1.8095007527318468e-06,4.16056494992454e-05,unambiguous
+0,D26600_at,PSMB4,"proteasome (prosome, macropain) subunit, beta type, 4",5692,higher,0.8275862068965518,1157.5,742.0,1.8095007527318468e-06,4.16056494992454e-05,unambiguous
+0,D23662_at,NEDD8,"neural precursor cell expressed, developmentally down-regulated 8",4738,higher,0.8275862068965518,1076.5,742.0,1.8095007527318468e-06,4.16056494992454e-05,unambiguous
+0,Z48042_at,CAPRIN1,cell cycle associated protein 1,4076,higher,0.8275862068965518,1070.5,742.0,1.8098457532171749e-06,4.16056494992454e-05,unambiguous
+0,U89505_at,RBM14-RBM4 /// RBM4,RBM14-RBM4 readthrough /// RNA binding motif protein 4,5936 /// 100526737,higher,0.8238916256157636,591.5,740.5,2.011451999709624e-06,4.530104870747524e-05,ambiguous
+0,J02902_at,PPP2R1A,"protein phosphatase 2, regulatory subunit A, alpha",5518,higher,0.8226600985221675,1140.5,740.0,2.0834555577831346e-06,4.530104870747524e-05,unambiguous
+0,U77948_at,GTF2I /// GTF2IP1 /// LOC100093631,"general transcription factor IIi /// general transcription factor IIi, pseudogene 1 /// general transcription factor II, i, pseudogene",2969 /// 2970 /// 100093631,higher,0.8226600985221675,710.0,740.0,2.0834555577831346e-06,4.530104870747524e-05,ambiguous
+0,X74104_at,SSR2,"signal sequence receptor, beta (translocon-associated protein beta)",6746,higher,0.8226600985221675,663.0,740.0,2.0834555577831346e-06,4.530104870747524e-05,unambiguous
+0,M19283_at,ACTB /// ACTG1,"actin, beta /// actin, gamma 1",60 /// 71,higher,0.8226600985221675,6186.5,740.0,2.083848240543861e-06,4.530104870747524e-05,ambiguous
+0,L28010_at,HNRNPF,heterogeneous nuclear ribonucleoprotein F,3185,higher,0.8201970443349753,994.5,739.0,2.233704131612425e-06,4.754343450606139e-05,unambiguous
+0,U05237_at,BPTF,bromodomain PHD finger transcription factor,2186,higher,0.8201970443349753,547.5,739.0,2.2345414217848855e-06,4.754343450606139e-05,unambiguous
+0,X72727_at,HNRNPK,heterogeneous nuclear ribonucleoprotein K,3190,higher,0.8177339901477831,1051.5,738.0,2.396567429860839e-06,4.992848812210081e-05,unambiguous
+0,X74008_at,PPP1CC,"protein phosphatase 1, catalytic subunit, gamma isozyme",5501,higher,0.8177339901477831,878.0,738.0,2.396567429860839e-06,4.992848812210081e-05,unambiguous
+0,HG1595-HT4788_s_at,,,,higher,0.8165024630541873,1209.0,737.5,2.481291652143458e-06,5.116065262151458e-05,unmapped
+0,U91327_at,CCT2,"chaperonin containing TCP1, subunit 2 (beta)",10576,higher,0.8152709359605912,561.0,737.0,2.569840308233448e-06,5.2445720576192814e-05,unambiguous
+0,HG2274-HT2370_at,,,,higher,0.812807881773399,392.5,736.0,2.754088746119883e-06,5.404153016434999e-05,unmapped
+0,L43631_at,SAFB,scaffold attachment factor B,6294,higher,0.812807881773399,407.5,736.0,2.754595953073685e-06,5.404153016434999e-05,unambiguous
+0,X04526_at,GNB1,"guanine nucleotide binding protein (G protein), beta polypeptide 1",2782,higher,0.812807881773399,1023.0,736.0,2.755610599195548e-06,5.404153016434999e-05,unambiguous
+0,J02683_s_at,SLC25A5,"solute carrier family 25 (mitochondrial carrier; adenine nucleotide translocator), member 5",292,higher,0.812807881773399,2703.0,736.0,2.7561180383818494e-06,5.404153016434999e-05,unambiguous
+0,D13627_at,CCT8,"chaperonin containing TCP1, subunit 8 (theta)",10694,higher,0.8115763546798029,937.5,735.5,2.85195215009406e-06,5.420600373230791e-05,unambiguous
+0,U94319_at,PSIP1,PC4 and SFRS1 interacting protein 1,11168,higher,0.8115763546798029,740.0,735.5,2.852999590541777e-06,5.420600373230791e-05,unambiguous
+0,D14878_at,CDC123,cell division cycle 123,8872,higher,0.8103448275862069,339.0,735.0,2.9520647284025097e-06,5.420600373230791e-05,unambiguous
+0,L10413_at,FNTA,"farnesyltransferase, CAAX box, alpha",2339,higher,0.8103448275862069,1402.0,735.0,2.952605224290846e-06,5.420600373230791e-05,unambiguous
+0,X62153_s_at,MCM3,minichromosome maintenance complex component 3,4172,higher,0.8103448275862069,806.0,735.0,2.95314580208196e-06,5.420600373230791e-05,unambiguous
+0,X60221_at,ATP5F1,"ATP synthase, H+ transporting, mitochondrial Fo complex, subunit B1",515,higher,0.8103448275862069,1180.5,735.0,2.953686461785406e-06,5.420600373230791e-05,unambiguous
+0,HG651-HT4201_at,,,,higher,0.8103448275862069,431.5,735.0,2.9542272034107815e-06,5.420600373230791e-05,unmapped
+0,M94556_at,SSBP1,"single-stranded DNA binding protein 1, mitochondrial",6742,higher,0.8066502463054188,744.0,733.5,3.2760202483498778e-06,5.956400451545232e-05,unambiguous
+0,U26266_s_at,DHPS,deoxyhypusine synthase,1725,higher,0.8054187192118227,484.0,733.0,3.390976602588059e-06,6.003900574343346e-05,unambiguous
+0,J04988_at,HSP90AB1,"heat shock protein 90kDa alpha (cytosolic), class B member 1",3326,higher,0.8054187192118227,3330.5,733.0,3.391590167715842e-06,6.003900574343346e-05,unambiguous
+0,Z47727_at,POLR2K,"polymerase (RNA) II (DNA directed) polypeptide K, 7.0kDa",5440,higher,0.8054187192118227,406.0,733.0,3.3922038245039903e-06,6.003900574343346e-05,unambiguous
+0,M69039_at,C1QBP,"complement component 1, q subcomponent binding protein",708,higher,0.8041871921182266,644.0,732.5,3.508529604209791e-06,6.155315095104897e-05,unambiguous
+0,M33336_at,PRKAR1A,"protein kinase, cAMP-dependent, regulatory, type I, alpha",5573,higher,0.8029556650246306,1153.5,732.0,3.63260115424571e-06,6.159166249057465e-05,unambiguous
+0,L03532_at,HNRNPM,heterogeneous nuclear ribonucleoprotein M,4670,higher,0.8029556650246306,1152.0,732.0,3.6332545721345465e-06,6.159166249057465e-05,unambiguous
+0,X02317_at,SOD1,"superoxide dismutase 1, soluble",6647,higher,0.8029556650246306,1990.5,732.0,3.633908086943904e-06,6.159166249057465e-05,unambiguous
+0,D38073_at,MCM3,minichromosome maintenance complex component 3,4172,higher,0.8029556650246306,596.0,732.0,3.633908086943904e-06,6.159166249057465e-05,unambiguous
+0,S80437_s_at,FASN,fatty acid synthase,2194,higher,0.8017241379310345,412.0,731.5,3.758172044823175e-06,6.316255537517941e-05,unambiguous
+0,U69546_at,CELF2,"CUGBP, Elav-like family member 2",10659,higher,0.8004926108374384,683.5,731.0,3.88998854114816e-06,6.328578335724568e-05,unambiguous
+0,L18960_at,EIF1AX,"eukaryotic translation initiation factor 1A, X-linked",1964,higher,0.8004926108374384,708.0,731.0,3.890684150472213e-06,6.328578335724568e-05,unambiguous
+0,U25849_at,ACP1,"acid phosphatase 1, soluble",52,higher,0.8004926108374384,674.0,731.0,3.891379862242516e-06,6.328578335724568e-05,unambiguous
+0,X15183_at,HSP90AA1,"heat shock protein 90kDa alpha (cytosolic), class A member 1",3320,higher,0.8004926108374384,4245.5,731.0,3.892075676470609e-06,6.328578335724568e-05,unambiguous
+1,U57342_at,MLF2,myeloid leukemia factor 2,8079,lower,-0.8888030888030888,-1170.0,72.0,9.27517163288506e-11,1.8550343265770125e-07,unambiguous
+1,HG371-HT26388_at,,,,higher,0.8694980694980694,959.0,1210.5,2.3339398846457044e-10,2.0087635482770637e-07,unmapped
+1,M95627_at,AAMP,"angio-associated, migratory cell protein",14,lower,-0.864092664092664,-523.0,88.0,3.0131453224155956e-10,2.0087635482770637e-07,unambiguous
+1,U72206_at,ARHGEF2,Rho/Rac guanine nucleotide exchange factor (GEF) 2,9181,lower,-0.857915057915058,-786.0,92.0,4.0255471060679024e-10,2.012773553033952e-07,unambiguous
+1,D10326_s_at,PKLR,"pyruvate kinase, liver and RBC",5313,higher,0.8471042471042471,1188.0,1196.0,6.653418589053145e-10,2.1917979139563402e-07,unambiguous
+1,X95190_at,ACOX2,"acyl-CoA oxidase 2, branched chain",8309,higher,0.8440154440154439,500.0,1194.0,7.67129269884719e-10,2.1917979139563402e-07,unambiguous
+1,U58048_at,CHMP1A,charged multivesicular body protein 1A,5119,lower,-0.844015444015444,-368.0,101.0,7.67129269884719e-10,2.1917979139563402e-07,unambiguous
+1,U33821_at,TAX1BP1,Tax1 (human T-cell leukemia virus type I) binding protein 1,8887,lower,-0.8277992277992278,-965.0,111.5,1.605158187616916e-09,3.567018194704259e-07,unambiguous
+1,U52112_rna5_at,RENBP,renin binding protein,5973,lower,-0.8285714285714285,-392.0,111.0,1.5515151532030987e-09,3.567018194704259e-07,unambiguous
+1,AB004884_at,TLK2,tousled-like kinase 2,11011,lower,-0.8223938223938224,-482.0,115.0,2.0486843419573694e-09,4.097368683914739e-07,unambiguous
+1,M31724_at,PTPN1,"protein tyrosine phosphatase, non-receptor type 1",5770,lower,-0.8193050193050193,-363.0,117.0,2.3513723720374992e-09,4.2752224946136345e-07,unambiguous
+1,L18983_at,PTPRN,"protein tyrosine phosphatase, receptor type, N",5798,lower,-0.8100386100386101,-783.0,123.0,3.550929554308315e-09,5.072756506154736e-07,unambiguous
+1,AB000460_at,FAM193A,"family with sequence similarity 193, member A",8603,lower,-0.8115830115830116,-620.0,122.0,3.318109279939727e-09,5.072756506154736e-07,unambiguous
+1,D13118_at,ATP5G1,"ATP synthase, H+ transporting, mitochondrial Fo complex, subunit C1 (subunit 9)",516,lower,-0.8131274131274131,-1003.0,121.0,3.099284588828296e-09,5.072756506154736e-07,unambiguous
+1,Y14140_at,GNB3,"guanine nucleotide binding protein (G protein), beta polypeptide 3",2784,lower,-0.8077220077220078,-541.0,124.5,3.9347671328512e-09,5.246356177134933e-07,unambiguous
+1,Z48501_s_at,PABPC1,"poly(A) binding protein, cytoplasmic 1",26986,lower,-0.8023166023166023,-5818.0,128.0,4.9922069970474234e-09,6.240258746309278e-07,unambiguous
+2,L12392_at,HTT,huntingtin,3064,higher,0.927240461401952,554.0,1086.0,2.893810748946028e-10,3.0495502955762256e-07,unambiguous
+2,U41767_s_at,ADAM15,ADAM metallopeptidase domain 15,8751,higher,0.9103815439219164,602.0,1076.5,6.028707239326706e-10,3.0495502955762256e-07,unambiguous
+2,HG1155-HT4822_at,,,,higher,0.898846495119787,808.0,1070.0,9.886967044833246e-10,3.0495502955762256e-07,unmapped
+2,X80907_at,PIK3R2,"phosphoinositide-3-kinase, regulatory subunit 2 (beta)",5296,higher,0.898846495119787,508.0,1070.0,9.886967044833246e-10,3.0495502955762256e-07,unambiguous
+2,X95190_at,ACOX2,"acyl-CoA oxidase 2, branched chain",8309,lower,-0.8970718722271518,-486.0,58.0,1.067342603451679e-09,3.0495502955762256e-07,unambiguous
+2,M15958_at,GAST,gastrin,2520,lower,-0.90150842945874,-365.0,55.5,8.824402994094436e-10,3.0495502955762256e-07,unambiguous
+2,L06147_at,GOLGA2,golgin A2,2801,lower,-0.9130434782608696,-748.0,49.0,5.373332644351211e-10,3.0495502955762256e-07,unambiguous
+2,L10615_s_at,CSN2,casein beta,1447,higher,0.8828748890860691,832.0,1061.0,1.9444368997626854e-09,3.8888737995253705e-07,unambiguous
+2,X04445_rna1_s_at,INHA,"inhibin, alpha",3623,lower,-0.8828748890860693,-610.0,66.0,1.943858930154812e-09,3.8888737995253705e-07,unambiguous
+2,AF015950_at,TERT,telomerase reverse transcriptase,7015,lower,-0.8864241348713399,-451.0,64.0,1.674102967698578e-09,3.8888737995253705e-07,unambiguous
+2,U05681_s_at,BCL3 /// MIR8085,B-cell CLL/lymphoma 3 /// microRNA 8085,602 /// 102465879,higher,0.8722271517302573,1141.0,1055.0,3.028211393199575e-09,4.187584768072485e-07,ambiguous
+2,X98261_at,,,,higher,0.8713398402839396,319.0,1054.5,3.140688576054363e-09,4.187584768072485e-07,unmapped
+2,U21689_at,GSTP1,glutathione S-transferase pi 1,2950,lower,-0.8740017746228926,-1170.0,71.0,2.81572701754893e-09,4.187584768072485e-07,unambiguous
+2,U82468_at,TULP1,tubby like protein 1,7287,lower,-0.8757763975155279,-762.0,70.0,2.6155006483068747e-09,4.187584768072485e-07,unambiguous
+2,X05855_at,H3F3A /// H3F3AP4 /// H3F3B,"H3 histone, family 3A /// H3 histone, family 3A, pseudogene 4 /// H3 histone, family 3B (H3.3B)",3020 /// 3021 /// 440926,lower,-0.8775510204081632,-1607.0,69.0,2.429166649729227e-09,4.187584768072485e-07,ambiguous
+2,Y10376_at,SIRPB1,signal-regulatory protein beta 1,10326,higher,0.867790594498669,637.0,1052.5,3.6389763153529964e-09,4.548720394191246e-07,unambiguous
+2,U52112_rna5_at,RENBP,renin binding protein,5973,higher,0.8651286601597161,445.0,1051.0,4.062957031367065e-09,4.779949448667135e-07,unambiguous
+2,D10326_s_at,PKLR,"pyruvate kinase, liver and RBC",5313,lower,-0.8509316770186335,-1164.0,84.0,7.251586347165979e-09,8.057318163517755e-07,unambiguous
+2,U39576_at,BTN1A1,"butyrophilin, subfamily 1, member A1",696,lower,-0.8491570541259983,-335.0,85.0,7.789047898454901e-09,8.198997787847264e-07,unambiguous
+2,X90846_s_at,MAP3K10,mitogen-activated protein kinase kinase kinase 10,4294,lower,-0.8473824312333629,-1217.0,86.0,8.367469844072038e-09,8.367469844072038e-07,unambiguous
+2,U52111_rna4_at,PLXNB3 /// SRPK3,plexin B3 /// SRSF protein kinase 3,5365 /// 26576,lower,-0.842058562555457,-566.0,89.0,1.036461617621484e-08,9.871063024966512e-07,ambiguous
+2,L15702_at,CFB,complement factor B,629,higher,0.8367346938775511,676.0,1035.0,1.2822036322615473e-08,1.1656396656923155e-06,unambiguous
+2,HG363-HT363_at,,,,higher,0.8331854480922805,550.0,1033.0,1.4765600313652437e-08,1.1734697180498654e-06,unmapped
+2,U27831_at,PTPN5,"protein tyrosine phosphatase, non-receptor type 5 (striatum-enriched)",84867,higher,0.8322981366459627,392.0,1032.5,1.5282374343712938e-08,1.1734697180498654e-06,unambiguous
+2,U38980_at,DTX2P1-UPK3BP1-PMS2P11,DTX2P1-UPK3BP1-PMS2P11 readthrough transcribed pseudogene,441263,higher,0.831410825199645,791.0,1032.0,1.5841841193673183e-08,1.1734697180498654e-06,unambiguous
+2,M16707_rna1_at,HIST1H4A /// HIST1H4B /// HIST1H4C /// HIST1H4D /// HIST1H4E /// HIST1H4F /// HIST1H4H /// HIST1H4I /// HIST1H4J /// HIST1H4K /// HIST1H4L /// HIST2H4A /// HIST2H4B /// HIST4H4,"histone cluster 1, H4a /// histone cluster 1, H4b /// histone cluster 1, H4c /// histone cluster 1, H4d /// histone cluster 1, H4e /// histone cluster 1, H4f /// histone cluster 1, H4h /// histone cluster 1, H4i /// histone cluster 1, H4j /// histone cluster 1, H4k /// histone cluster 1, H4l /// histone cluster 2, H4a /// histone cluster 2, H4b /// histone cluster 4, H4",8294 /// 8359 /// 8360 /// 8361 /// 8362 /// 8363 /// 8364 /// 8365 /// 8366 /// 8367 /// 8368 /// 8370 /// 121504 /// 554313,lower,-0.831410825199645,-395.0,95.0,1.5841841193673183e-08,1.1734697180498654e-06,ambiguous
+2,X12517_at,SNRPC,small nuclear ribonucleoprotein polypeptide C,6631,lower,-0.8349600709849156,-969.0,93.0,1.3756852888979946e-08,1.1734697180498654e-06,unambiguous
+2,M64108_at,COL14A1,"collagen, type XIV, alpha 1",7373,higher,0.8278615794143744,431.0,1030.0,1.820850063369412e-08,1.3006071881210083e-06,unambiguous
+2,D13705_s_at,CYP4A11,"cytochrome P450, family 4, subfamily A, polypeptide 11",1579,higher,0.8251996450754215,447.0,1028.5,2.0221263302566975e-08,1.394569882935653e-06,unambiguous
+2,L27584_s_at,CACNB3,"calcium channel, voltage-dependent, beta 3 subunit",784,lower,-0.8243123336291038,-627.0,99.0,2.0960772365406564e-08,1.3973848243604377e-06,unambiguous
+2,U67092_s_at,ATM,ATM serine/threonine kinase,472,higher,0.8189884649511978,1071.0,1025.0,2.582030014727393e-08,1.6658258159531568e-06,unambiguous
+2,S83390_s_at,NCOR2,nuclear receptor corepressor 2,9612,lower,-0.8181011535048802,-340.0,102.5,2.6688975318368173e-08,1.6680609573980103e-06,unambiguous
+2,U62317_rna3_at,CHKB,choline kinase beta,1120,higher,0.8154392191659272,819.0,1023.0,2.9634755041518023e-08,1.7441089033522992e-06,unambiguous
+2,M90299_at,GCK,glucokinase (hexokinase 4),2645,higher,0.8154392191659272,379.0,1023.0,2.9649851356989093e-08,1.7441089033522992e-06,unambiguous
+2,HG2662-HT2758_at,,,,lower,-0.8145519077196096,-498.0,104.5,3.0690172079034415e-08,1.753724118801966e-06,unmapped
+2,U07132_at,NR1H2,"nuclear receptor subfamily 1, group H, member 2",7376,higher,0.813664596273292,472.0,1022.0,3.175781439121734e-08,1.7643230217342968e-06,unambiguous
+2,X69699_at,PAX8,paired box 8,7849,higher,0.8127772848269743,454.0,1021.5,3.287810126210901e-08,1.7771946628167037e-06,unambiguous
+2,U50136_rna1_at,LTC4S,leukotriene C4 synthase,4056,higher,0.8101153504880212,1474.0,1020.0,3.6446207757974974e-08,1.8690362952807676e-06,unambiguous
+2,U60276_at,ASNA1,"arsA arsenite transporter, ATP-binding, homolog 1 (bacterial)",439,lower,-0.8101153504880213,-553.0,107.0,3.6446207757974974e-08,1.8690362952807676e-06,unambiguous
+2,D31846_at,AQP2,aquaporin 2 (collecting duct),359,higher,0.8074534161490683,811.0,1018.5,4.038865547421337e-08,2.0194327737106677e-06,unambiguous
+2,HG2887-HT3031_at,,,,lower,-0.8065661047027507,-10896.0,109.0,4.179242995189936e-08,2.0386551196048467e-06,unmapped
+2,M13452_s_at,LMNA,lamin A/C,4000,higher,0.8039041703637977,1116.0,1016.5,4.629349283237309e-08,2.2044520396368138e-06,unambiguous
+2,X14448_at,GLA,"galactosidase, alpha",2717,higher,0.8021295474711623,394.0,1015.5,4.953940368297841e-08,2.3041583108362054e-06,unambiguous
+2,X15573_at,PFKL,"phosphofructokinase, liver",5211,lower,-0.8012422360248448,-1773.0,112.0,5.127558573132032e-08,2.330708442332742e-06,unambiguous

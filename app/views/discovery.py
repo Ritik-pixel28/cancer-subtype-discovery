@@ -282,6 +282,24 @@ def compare(d):
                     hide_index=True,
                     width="stretch",
                 )
+    p8 = d.phase8_characterization()
+    if p8:
+        with st.expander("Phase 8 Subtype Characterization & Statistical Comparisons"):
+            comp = p8.get("comparison", pd.DataFrame())
+            if not comp.empty:
+                pair_comp = comp[
+                    ((comp.cluster_a == ca) & (comp.cluster_b == cb))
+                    | ((comp.cluster_a == cb) & (comp.cluster_b == ca))
+                ]
+                if not pair_comp.empty:
+                    st.dataframe(pair_comp, hide_index=True, width="stretch")
+            summary = p8.get("summary", pd.DataFrame())
+            if not summary.empty:
+                st.dataframe(
+                    summary[summary.cluster.isin([ca, cb])],
+                    hide_index=True,
+                    width="stretch",
+                )
     configuration = {
         "dataset": d.summary.get("dataset"),
         "cluster_a": int(ca),
