@@ -46,7 +46,7 @@ enrichment:
   gene_sets:
     - "KEGG_2021_Human"
     - "Reactome_2022"
-    - "Hallmark_2020"
+    - "MSigDB_Hallmark_2020"
     - "GO_Biological_Process_2021"
   organism: "Human"
   min_size: 5
