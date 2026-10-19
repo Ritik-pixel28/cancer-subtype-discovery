@@ -1,0 +1,8 @@
+{
+  "tested_probe_count": 2000,
+  "mapped_unique_gene_count": 1580,
+  "unmapped_probe_count": 164,
+  "ambiguous_probe_count": 166,
+  "control_probe_count": 15,
+  "annotation_platform": "GPL80"
+}

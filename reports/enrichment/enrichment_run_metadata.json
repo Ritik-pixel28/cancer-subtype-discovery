@@ -1,0 +1,29 @@
+{
+  "phase": 7,
+  "method": "Over-representation analysis (ORA)",
+  "test": "One-sided hypergeometric test",
+  "run_timestamp_utc": "2026-10-19T07:50:06.300709+00:00",
+  "organism": "Human",
+  "gene_set_libraries": [
+    "KEGG_2021_Human",
+    "Reactome_2022",
+    "MSigDB_Hallmark_2020",
+    "GO_Biological_Process_2021"
+  ],
+  "gene_set_source": "Locally cached GMT files",
+  "min_size": 5,
+  "max_size": 500,
+  "pathway_size_definition": "Number of pathway genes overlapping the effective background universe, after filtering to the configured size range.",
+  "fdr_threshold": 0.05,
+  "multiple_testing_correction": "Benjamini-Hochberg separately for each cluster and library",
+  "background_definition": "Unique mapped gene symbols from probes tested in Phase 6; ambiguous mappings and AFFX controls excluded. For each library, the effective background is further restricted to genes present in at least one gene set in that library.",
+  "mapping_summary": {
+    "tested_probe_count": 2000,
+    "mapped_unique_gene_count": 1580,
+    "unmapped_probe_count": 164,
+    "ambiguous_probe_count": 166,
+    "control_probe_count": 15,
+    "annotation_platform": "GPL80"
+  },
+  "errors": []
+}
