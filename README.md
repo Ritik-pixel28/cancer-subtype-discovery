@@ -8,6 +8,17 @@ The initial reference dataset is the **Golub et al. leukemia gene-expression dat
 
 ---
 
+## Phase 9 — Molecular Discovery Explorer
+
+A cinematic molecular landing page leads into twelve research modules: dataset and preprocessing exploration, 2D/3D PCA, cluster discovery, validation, biomarkers, optional Phase 7/8 interpretation, comparisons, PDF/HTML reporting and reproducibility. The landing animation uses the published 1BNA DNA structure. Scientific values come from validated project artifacts.
+
+```sh
+python -m pip install -r requirements-app.txt
+python -m streamlit run app/streamlit_app.py
+```
+
+See [PHASE9.md](PHASE9.md) for complete setup, contracts, limitations and deployment notes. Phase 7/8 analyses and the original consensus matrix are not fabricated when missing.
+
 ## Overview
 
 The goal of this project is to build an end-to-end and reproducible pipeline for discovering, validating, and biologically interpreting molecular subgroups from gene-expression data.
@@ -1666,7 +1677,7 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 ### In Progress
 
 - [ ] PCA explained-variance analysis
-- [ ] PCA visualization
+- [x] PCA visualization
 - [ ] UMAP visualization
 - [ ] Pathway enrichment
 - [ ] Biological interpretation
@@ -2189,13 +2200,13 @@ The purpose of the current work is:
 [ ] Mann-Whitney testing
 [ ] BH-FDR correction
 [ ] Candidate marker ranking
-[ ] PCA visualization
+[x] PCA visualization
 [ ] UMAP
 [ ] Pathway enrichment
 [ ] Biological interpretation
 [ ] Explainability / SHAP
-[ ] Automated reporting
-[ ] Streamlit application
+[x] Automated reporting (HTML/ZIP)
+[x] Streamlit application
 [ ] End-to-end pipeline
 ```
 
@@ -2257,7 +2268,7 @@ Phase 5 — Cluster validation            ✅
 Phase 6 — Biomarker discovery           ✅
 Phase 7 — Pathway enrichment            🚧 In Progress
 Phase 8 — Explainability                ⏳ Planned
-Phase 9 — Reporting / application       ⏳ Planned
+Phase 9 — Reporting / application       ✅ Local app available
 ```
 
 Phase 5 has produced an exploratory `k=3` consensus partition for downstream analysis.
@@ -2265,116 +2276,45 @@ Phase 5 has produced an exploratory `k=3` consensus partition for downstream ana
 Phase 6 is now beginning with statistical identification of genes that distinguish the discovered clusters.
 
 The project remains an exploratory research pipeline and does not currently make clinical or diagnostic claims.
+### Start the dashboard reliably
+
+From this repository folder run:
+
+```sh
+python run.py
+```
+
+Open http://127.0.0.1:8509. The launcher selects the complete project environment; a bare `streamlit` command may select a different Anaconda installation without the PDF dependencies. `python run.py --check` checks the selected environment without starting the website.
+
 ---
 
 ## Phase 7: Biological Pathway Enrichment
 
-### Objective
+Phase 7 performs exploratory over-representation analysis (ORA) using Phase 6 cluster-specific biomarkers.
 
-Phase 7 investigates the biological processes and pathways associated with the cluster-specific biomarkers identified during Phase 6. It uses over-representation analysis (ORA) to identify pathways containing more biomarker genes than expected under a defined background model.
+### Method
+- GPL80 probe annotation; ambiguous mappings and AFFX controls excluded.
+- Four libraries: KEGG 2021 Human, Reactome 2022, MSigDB Hallmark 2020, and GO Biological Process 2021.
+- One-sided hypergeometric testing with an explicit effective background.
+- Pathway-size limits: 5–500 genes.
+- Benjamini–Hochberg FDR correction separately for each cluster and library.
+- Significance threshold: FDR <= 0.05.
 
-The results are exploratory and are intended to support biological interpretation of the discovered clusters. They do not independently establish clinical subtypes or causal mechanisms.
+### Recorded results
+- 2,000 tested probes.
+- 1,580 unique mapped background genes.
+- 8,724 pathway tests.
+- 254 significant pathway terms at FDR <= 0.05.
+- Cluster 0: 254 significant terms.
+- Cluster 1: 0 significant terms.
+- Cluster 2: 0 significant terms.
 
-### Methodology
+These results are exploratory. Enriched pathways may share genes, and statistical enrichment does not establish causality or clinical validity. Biological interpretation and independent validation remain necessary.
 
-The Phase 7 pipeline performs the following steps:
+### Outputs
+Results are stored in `reports/enrichment/`, including all pathway results, significant pathways, summary counts, mapping information, and run metadata.
 
-1. Loads cluster-specific biomarker results from `reports/biomarkers/all_biomarker_results.csv`.
-2. Annotates the tested probes using the GPL80 platform annotation.
-3. Excludes ambiguous probe mappings and AFFX control probes from the primary gene universe.
-4. Constructs cluster-specific query gene lists from Phase 6 significant biomarkers.
-5. Loads four locally cached gene-set libraries.
-6. Restricts each library's analysis universe to mapped background genes represented in that library.
-7. Filters pathways by their size within the effective background universe.
-8. Calculates one-sided hypergeometric over-representation p-values.
-9. Applies Benjamini–Hochberg false-discovery-rate (FDR) correction separately for each cluster and library.
-10. Exports pathway results, significant findings, mapping summaries, and run metadata.
+### Run
+Run `python scripts/run_phase7_enrichment.py` from the project root. The script requires the Phase 6 biomarker results, GPL80 annotation, and four configured GMT files under `data/annotation/gene_sets/`.
 
-### Gene-set libraries
-
-| Library | Purpose |
-|---|---|
-| KEGG 2021 Human | Curated biological and signaling pathways |
-| Reactome 2022 | Curated molecular pathways and biological reactions |
-| MSigDB Hallmark 2020 | Summarized biological states and processes |
-| GO Biological Process 2021 | Gene Ontology biological-process terms |
-
-The gene-set files are cached under:
-
-```text
-data/annotation/gene_sets/
-
-The four required GMT files are:
-
-- `KEGG_2021_Human.gmt`
-- `Reactome_2022.gmt`
-- `MSigDB_Hallmark_2020.gmt`
-- `GO_Biological_Process_2021.gmt`
-
-These files are local inputs and may be excluded from Git by repository ignore rules. They must be available locally to reproduce the analysis.
-
-### Statistical approach
-
-The pipeline uses a one-sided hypergeometric test to assess over-representation of query genes in each pathway.
-
-- Minimum pathway size: 5 genes
-- Maximum pathway size: 500 genes
-- Significance threshold: FDR <= 0.05
-- Multiple-testing correction: Benjamini-Hochberg, separately for each cluster and library
-
-Pathway sizes are evaluated within the effective background universe. The background consists of uniquely mapped gene symbols from Phase 6 tested probes, excluding ambiguous mappings and AFFX controls, and is further restricted to genes represented in each library.
-
-### Results from the recorded run
-
-| Metric | Result |
-|---|---:|
-| Unique tested probes | 2,000 |
-| Unique mapped background genes | 1,580 |
-| Clusters analyzed | 3 |
-| Gene-set libraries | 4 |
-| Pathway tests | 8,724 |
-| Significant pathways at FDR <= 0.05 | 254 |
-| Cluster 0 significant pathways | 254 |
-| Cluster 1 significant pathways | 0 |
-| Cluster 2 significant pathways | 0 |
-| Recorded execution errors | 0 |
-
-These results are specific to the recorded run and should be regenerated if the input data, annotation, gene-set files, or analysis implementation changes.
-
-No pathways passing the FDR threshold in Clusters 1 and 2 does not prove that those clusters lack biological significance. The 254 significant pathway terms may also share genes and should not be interpreted as 254 independent biological findings.
-
-### Output files
-
-Results are stored in `reports/enrichment/`.
-
-| File | Description |
-|---|---|
-| `enrichment_all_results.csv` | Results for all tested pathways |
-| `enrichment_significant_results.csv` | Pathways passing the FDR threshold |
-| `enrichment_summary.csv` | Significant pathway counts by cluster and library |
-| `enrichment_run_metadata.json` | Analysis settings and run metadata |
-| `mapping_summary.json` | Probe-mapping statistics |
-| `annotated_tested_probe_universe.csv` | Annotation status of tested probes |
-
-### Running Phase 7
-
-From the project root, run:
-
-```bash
-python scripts/run_phase7_enrichment.py
-
-### Interpretation and limitations
-
-The enrichment results are exploratory. Their interpretation depends on biomarker quality, probe-to-gene mapping, the selected gene-set libraries, and the effective background universe. Statistical enrichment does not establish causality or clinical validity.
-
-Leading pathways and their contributing genes should be reviewed for biological coherence and, where possible, validated independently.
-
----
-
-## Updated Project Status
-
-**Phase 7 — Computational implementation and execution: Complete**
-
-The enrichment pipeline has run successfully, and its output files have passed the recorded structural and statistical-range checks. Biological interpretation remains a follow-up task.
-
-Phase 8 — Explainability: Planned.
+**Phase 7 computational implementation and execution: complete.** Biological interpretation remains a follow-up task.

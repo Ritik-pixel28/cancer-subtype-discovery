@@ -1,0 +1,10 @@
+# Tested presentation runtime. Install separately from historical pipeline requirements.
+streamlit==1.65.0
+plotly==6.9.0
+pandas==3.0.0
+numpy==2.4.1
+scikit-learn==1.9.1
+PyYAML==6.0.3
+reportlab==5.0.1
+matplotlib==3.11.2
+Jinja2==3.1.6
