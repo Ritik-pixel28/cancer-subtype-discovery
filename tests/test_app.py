@@ -23,6 +23,7 @@ def app(page):
         "Validation",
         "Biomarkers",
         "Pathways",
+        "Characterization",
         "Explainability",
         "Compare",
         "Reports",
@@ -132,3 +133,33 @@ def test_report_figure_preview_changes_with_selection():
     assert image.caption.startswith("Validation")
     assert image.url != first
     assert len((at.get("image") or at.get("imgs"))) == 1
+
+
+def test_native_phase7_page_and_empty_cluster():
+    at = app("Pathways")
+    assert not at.exception
+    assert not any("awaiting" in x.value for x in at.warning)
+    assert len(at.dataframe[0].value) == 254
+    next(x for x in at.selectbox if x.label == "Focus cluster").set_value(1).run()
+    assert not at.exception
+    assert any("results are loaded" in x.value for x in at.info)
+
+
+def test_phase8_page_filters_and_figures():
+    at = app("Characterization")
+    assert not at.exception
+    assert [m.value for m in at.metric] == ["3", "72", "183", "254"]
+    next(x for x in at.selectbox if x.label == "Focus cluster").set_value(2).run()
+    assert not at.exception
+    assert [m.value for m in at.metric] == ["1", "23", "44", "0"]
+    assert len(at.dataframe[0].value) == 1
+    assert len(at.dataframe[1].value) == 2
+    next(x for x in at.selectbox if x.label == "Subtype characterization figure").set_value("PCA distribution").run()
+    assert not at.exception
+
+
+def test_explainability_links_to_characterization():
+    at = app("Explainability")
+    next(b for b in at.button if b.label == "View Subtype Characterization ↗").click().run()
+    assert not at.exception
+    assert at.metric[0].value == "3"

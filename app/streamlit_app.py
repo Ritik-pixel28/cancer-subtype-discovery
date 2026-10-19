@@ -43,6 +43,7 @@ else:
         "Biomarkers": ("discovery", "biomarkers"),
         "Compare": ("discovery", "compare"),
         "Pathways": ("discovery", "pathways"),
+        "Characterization": ("discovery", "characterization"),
         "Explainability": ("discovery", "explainability"),
         "Reports": ("reporting", "reports"),
         "Methods": ("reporting", "methods"),

@@ -101,15 +101,18 @@ def overview(d):
                     ):
                         navigate(route)
     st.info(
-        "The selected k=3 partition is exploratory. Mixed validation evidence, a small cohort and same-cohort candidate discovery require independent validation. Phase 7 and Phase 8 will add interpretation when validated outputs become available."
+        "The selected k=3 partition is exploratory. Mixed validation evidence, a small cohort and same-cohort candidate discovery require independent validation. Explore the available pathway and subtype characterization results below."
     )
     status = pd.DataFrame(
         {
-            "Stage": ["Pathway enrichment", "Explainability"],
-            "Status": [d.status.get("pathways"), d.status.get("importance")],
+            "Stage": ["Phase 7 · Pathway enrichment", "Subtype Characterization", "Optional model explainability"],
+            "Status": [d.status.get("pathways"), d.status.get("characterization"), d.status.get("importance")],
         }
     )
     st.dataframe(status, hide_index=True, width="stretch")
+    if not d.get("characterization").empty:
+        if st.button("Open Subtype Characterization ↗", key="open_phase8"):
+            navigate("Characterization")
 
 
 def dataset(d):

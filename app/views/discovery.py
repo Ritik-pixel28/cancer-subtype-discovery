@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from app.components.layout import heading, missing, focus, download
+from app.components.layout import heading, missing, focus, download, go as navigate
 from app.charts import show, heatmap, pca_scatter, MAP, COLORS
 
 
@@ -284,7 +284,7 @@ def compare(d):
                 )
     p8 = d.phase8_characterization()
     if p8:
-        with st.expander("Phase 8 Subtype Characterization & Statistical Comparisons"):
+        with st.expander("Subtype Characterization & Statistical Comparisons"):
             comp = p8.get("comparison", pd.DataFrame())
             if not comp.empty:
                 pair_comp = comp[
@@ -320,7 +320,7 @@ def pathways(d):
     heading(
         "08",
         "The biological context.",
-        "Connect candidate genes to pathway evidence when Phase 7 outputs are ready. Enrichment does not prove activation or causality.",
+        "Explore the saved Phase 7 over-representation results. Enrichment does not prove activation or causality.",
     )
     if missing(
         d,
@@ -336,6 +336,10 @@ def pathways(d):
             )
         return
     frame = d.get("pathways")
+    st.caption(
+        f"{len(frame):,} saved pathway tests · filters below apply to the original adjusted p-values. "
+        "Native Phase 7 exports use pathway term names as lookup keys; accession IDs are not supplied."
+    )
     a, b, c = st.columns(3)
     database = a.multiselect(
         "Pathway databases", frame.database.unique(), default=frame.database.unique()
@@ -351,7 +355,7 @@ def pathways(d):
         & frame.pathway_name.str.contains(query, case=False, regex=False)
     ].sort_values("adjusted_p_value")
     if f.empty:
-        st.info("No pathways match these filters.")
+        st.info("Phase 7 results are loaded, but no pathways match these filters. Try another cluster or adjust the filters.")
         return
     axis = "enrichment_score" if "enrichment_score" in f else "significance"
     plot = f.head(25).copy()
@@ -394,6 +398,71 @@ def pathways(d):
         )
 
 
+
+def characterization(d):
+    heading("SUBTYPE CHARACTERIZATION", "Understand the discovered groups.",
+            "Explore the saved subtype characterization: sample composition, candidate probes, pathway evidence and cross-cluster comparisons.")
+    if missing(d, "characterization", "Subtype characterization results are unavailable."):
+        return
+    summary = d.get("characterization")
+    selected = summary[summary.cluster.isin(focus(d))]
+    cols = st.columns(4)
+    for col, (label, value) in zip(cols, [
+        ("Groups in view", len(selected)),
+        ("Samples in view", int(selected.sample_count.sum())),
+        ("Strong candidate entries", int(selected.strong_candidate_count.sum())),
+        ("Significant pathway entries", int(selected.significant_pathways_total.sum())),
+    ]):
+        col.metric(label, value)
+    st.caption("Subtype characterization results loaded · Use Focus cluster above to inspect a group. Candidate and pathway totals count entries across groups and libraries, not unique genes or pathways.")
+    overview, comparisons, figures = st.tabs(["Group profiles", "Statistical comparisons", "Saved figures"])
+    with overview:
+        labels = selected[["cluster", "known_ALL_count", "known_AML_count"]].melt(
+            id_vars="cluster", var_name="Known label", value_name="Samples")
+        labels["Known label"] = labels["Known label"].map({"known_ALL_count": "ALL", "known_AML_count": "AML"})
+        labels["cluster"] = labels.cluster.astype(int).astype(str)
+        show(px.bar(labels, x="cluster", y="Samples", color="Known label", barmode="stack",
+                    color_discrete_map={"ALL": "#498a92", "AML": "#c69a56"}), "phase8_labels", 360)
+        st.caption("Known ALL/AML labels are used for interpretation after clustering.")
+        st.subheader("Cluster summaries")
+        columns = ["cluster", "sample_count", "known_ALL_count", "known_AML_count",
+                   "strong_candidate_count", "significant_pathways_total"]
+        st.dataframe(selected[columns], hide_index=True, width="stretch")
+        download(selected, "phase8_cluster_summary")
+        st.info("These are exploratory groups. The same cohort was used for discovery and characterization; independent validation is required. No significant pathway entries at the saved threshold does not establish an absence of biological differences.")
+    with comparisons:
+        p8 = d.phase8_characterization()
+        comp = p8["comparison"] if p8 else pd.DataFrame()
+        if comp.empty:
+            st.info("Saved cross-cluster comparisons are unavailable.")
+        else:
+            if len(selected) < len(summary):
+                comp = comp[comp.cluster_a.isin(selected.cluster) | comp.cluster_b.isin(selected.cluster)]
+            st.caption("Comparisons involving the selected cluster(s). Fisher p-values are the saved pairwise values. Infinite odds ratios indicate a zero cell in the ALL/AML table; PCA centroid distances use the saved comparison representation.")
+            st.dataframe(comp, hide_index=True, width="stretch")
+            download(comp, "phase8_statistical_comparisons")
+    with figures:
+        options = {
+            "Sample distribution": "cluster_sample_distribution.png",
+            "Biomarker counts": "biomarker_counts_by_cluster.png",
+            "Pathway enrichment counts": "pathway_enrichment_counts_by_cluster.png",
+            "Top biomarkers": "top_biomarkers_effect_size.png",
+            "Cluster 0 pathways": "top_pathways_cluster0.png",
+            "PCA distribution": "cross_cluster_pca_distribution.png",
+        }
+        available = {label: d.root / "reports/phase8/figures" / filename
+                     for label, filename in options.items()
+                     if (d.root / "reports/phase8/figures" / filename).is_file()}
+        if available:
+            chosen = st.selectbox("Subtype characterization figure", list(available))
+            st.caption("Saved analysis figures show their original scope and do not change with Focus cluster.")
+            st.image(str(available[chosen]), caption=chosen, width="stretch")
+            st.download_button("Download Subtype characterization figure · PNG", available[chosen].read_bytes(),
+                               available[chosen].name, "image/png", on_click="ignore")
+        else:
+            st.info("No saved Subtype characterization figures are available.")
+
+
 def explainability(d):
     heading(
         "09",
@@ -403,8 +472,11 @@ def explainability(d):
     if missing(
         d,
         "importance",
-        "Explainability is awaiting your partner’s validated Phase 8 results.",
+        "Optional model explainability outputs have not been supplied. Subtype characterization is available separately.",
     ):
+        if not d.get("characterization").empty:
+            if st.button("View Subtype Characterization ↗", key="explain_phase8"):
+                navigate("Characterization")
         st.write(
             "Prepared views include global importance, sample-level contributions, observed feature values and independently evaluated surrogate fidelity."
         )
