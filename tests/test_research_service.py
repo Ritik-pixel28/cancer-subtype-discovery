@@ -138,5 +138,29 @@ def test_optional_phase7_and_phase8_contracts(tmp_path):
 
 def test_missing_consensus_not_fabricated(data):
     assert data.get("consensus").empty
-    assert data.get("pathways").empty
     assert data.get("importance").empty
+
+
+def test_native_phase7_results_keep_original_statistics(data):
+    raw = pd.read_csv(ROOT / "reports/enrichment/enrichment_all_results.csv")
+    loaded = data.get("pathways")
+    assert data.status["pathways"] == "Available"
+    assert len(loaded) == len(raw) == 8724
+    assert np.array_equal(loaded.adjusted_p_value, raw["Adjusted P-value"])
+    assert np.array_equal(loaded.raw_p_value, raw["P-value"])
+    assert loaded.database.equals(raw.gene_set_library)
+    assert (loaded.adjusted_p_value <= 0.05).sum() == 254
+    assert "enrichment_score" not in loaded
+    assert data.enrichment_meta["test"] == "One-sided hypergeometric test"
+
+
+def test_invalid_native_phase7_statistics_rejected(tmp_path):
+    root = fixture_root(tmp_path)
+    target = root / "reports/enrichment"
+    target.mkdir()
+    frame = pd.read_csv(ROOT / "reports/enrichment/enrichment_all_results.csv").head(1)
+    frame.loc[0, "Adjusted P-value"] = 1.5
+    frame.to_csv(target / "enrichment_all_results.csv", index=False)
+    result = ResearchData(root)
+    assert result.get("pathways").empty
+    assert result.status["pathways"] == "Invalid artifact"

@@ -351,5 +351,5 @@ def test_csv_schemas_and_phase9_compatibility():
 
     # 4. Phase 9 optional missing contracts must remain unaffected
     assert rd.get("consensus").empty
-    assert rd.get("pathways").empty
+    assert not rd.get("pathways").empty
     assert rd.get("importance").empty

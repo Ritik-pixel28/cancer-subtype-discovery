@@ -95,13 +95,18 @@ class ResearchData:
         self._load("mad", lambda: pd.read_csv(self.root / "reports/app/mad.csv"))
         self._load("all_biomarkers", self._all_biomarkers)
         for name, (relative, required) in OPTIONAL.items():
-            self._load(name, lambda p=relative, r=required: self._optional(p, r))
+            if name == "pathways":
+                self._load(name, self._pathways)
+            else:
+                self._load(name, lambda p=relative, r=required: self._optional(p, r))
         self.model = self._json_or_yaml(
             "reports/explainability/model_metadata.json", json.loads
         )
-        self.enrichment_meta = self._json_or_yaml(
-            "reports/enrichment/metadata.json", json.loads
-        )
+        metadata_path = "reports/enrichment/metadata.json"
+        if not (self.root / metadata_path).exists():
+            metadata_path = "reports/enrichment/enrichment_run_metadata.json"
+        self.enrichment_meta = self._json_or_yaml(metadata_path, json.loads)
+        self._load("characterization", self._characterization_summary)
         self._load("consensus", self._consensus)
         self._validate_alignment()
 
@@ -186,11 +191,35 @@ class ResearchData:
             frame["gene_title"] = None
         return frame
 
+    def _pathways(self):
+        relative, required = OPTIONAL["pathways"]
+        if (self.root / "reports" / relative).exists():
+            return self._optional(relative, required)
+        # Phase 7's native ORA export contains all tests, including nonsignificant rows.
+        source = "enrichment/enrichment_all_results.csv"
+        frame = pd.read_csv(self.root / "reports" / source)
+        frame = frame.rename(columns={
+            "Term": "pathway_name",
+            "gene_set_library": "database",
+            "Adjusted P-value": "adjusted_p_value",
+            "P-value": "raw_p_value",
+            "Genes": "overlapping_genes",
+            "pathway_size_in_background": "pathway_size",
+        })
+        # The native export has term names, not accession IDs. Keep those labels
+        # as lookup keys without claiming that an accession was supplied.
+        if "pathway_id" not in frame and "pathway_name" in frame:
+            frame["pathway_id"] = frame["pathway_name"]
+        return self._validate_optional(frame, required, source)
+
     def _optional(self, relative, required):
         frame = pd.read_csv(
             self.root / "reports" / relative,
             dtype={"sample_id": str, "feature_id": str},
         )
+        return self._validate_optional(frame, required, relative)
+
+    def _validate_optional(self, frame, required, relative):
         missing = set(required) - set(frame)
         if missing:
             raise ValueError(f"{relative}: missing {sorted(missing)}")
@@ -408,16 +437,39 @@ class ResearchData:
             "software": versions,
             "artifact_sha256": files,
             "phase7": self.status.get("pathways"),
-            "phase8": self.status.get("importance"),
+            "phase8": self.status.get("characterization"),
+            "model_explainability": self.status.get("importance"),
         }
 
+    def _characterization_summary(self):
+        source = "phase8/subtype_characterization_summary.csv"
+        frame = pd.read_csv(self.root / "reports" / source)
+        required = {"cluster", "sample_count", "known_ALL_count", "known_AML_count",
+                    "strong_candidate_count", "significant_pathways_total"}
+        if required - set(frame):
+            raise ValueError("Subtype characterization summary is missing required columns")
+        numeric(frame, sorted(required), source)
+        for field in required:
+            integer_labels(frame[field], source)
+        if frame.cluster.duplicated().any():
+            raise ValueError("Subtype characterization summary has duplicate clusters")
+        counts = self.get("clusters").cluster.value_counts().sort_index()
+        actual = frame.set_index("cluster").sample_count.sort_index()
+        if not actual.equals(counts):
+            raise ValueError("Subtype characterization sample counts do not match saved clusters")
+        if not (frame.known_ALL_count + frame.known_AML_count == frame.sample_count).all():
+            raise ValueError("Subtype characterization reference label counts do not match sample counts")
+        return frame
+
     def phase8_characterization(self):
-        """Load Phase 8 subtype characterization and cross-cluster comparisons if available."""
+        """Load Subtype characterization and cross-cluster comparisons if available."""
         path = self.root / "reports/phase8/subtype_characterization_summary.csv"
         if not path.is_file():
             return None
         try:
-            summary = pd.read_csv(path)
+            summary = self.get("characterization")
+            if summary.empty:
+                return None
             cross_path = self.root / "reports/phase8/cross_cluster_comparison.csv"
             cross = pd.read_csv(cross_path) if cross_path.is_file() else pd.DataFrame()
             meta_path = self.root / "reports/phase8/phase8_run_metadata.json"
