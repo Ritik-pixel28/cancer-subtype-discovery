@@ -314,7 +314,7 @@ def section_content(d, o, tables):
         elif section == "Explainability":
             p = tables.get("importance", pd.DataFrame())
             text = (
-                "Awaiting validated Phase 8 results. No SHAP values were inferred or fabricated."
+                "Optional surrogate-model and SHAP outputs are unavailable. Subtype characterization is a separate analysis available in the dashboard."
                 if p.empty
                 else "SHAP explains the surrogate classifier, not causal biology or the unsupervised algorithm directly. Model metadata: "
                 + json.dumps(d.model)

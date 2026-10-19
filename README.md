@@ -2259,6 +2259,7 @@ The dataset is accessed through the Bioconductor `golubEsets` package.
 
 ### Current milestone
 
+
 ```text
 Phase 1 — Data loading                  ✅
 Phase 2 — Preprocessing                 ✅
@@ -2374,3 +2375,12 @@ Phase 8 integrates discovered clusters (Phase 5), biomarker candidates (Phase 6)
 # Run Phase 8 analysis from repository root
 python scripts/run_phase8_characterization.py
 ```
+
+
+### Dashboard access to pathway and subtype results
+
+Choose **Research sections → Subtype Characterization** to view saved group summaries, ALL/AML composition, statistical comparisons and six downloadable figures. The overview includes a direct shortcut. **Focus cluster** filters summaries and comparisons; saved figures retain their original analysis scope.
+
+The pathway page reads the native `reports/enrichment/enrichment_all_results.csv` export and its run metadata, retaining the original adjusted p-values and nonsignificant tests for filtering. The normalized `pathway_results.csv` format remains supported.
+
+Subtype characterization is distinct from optional surrogate-model/SHAP explainability. Missing SHAP outputs do not mean that subtype characterization is pending.

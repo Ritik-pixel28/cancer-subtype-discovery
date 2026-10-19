@@ -60,7 +60,7 @@ def reports(d):
         )
         sections = st.multiselect("Include sections", SECTIONS, default=SECTIONS)
         st.caption(
-            "Scientific limitations and report scope are always included. Missing Phase 7/8 sections are explicitly marked pending. Executive summaries are concise; full tables are in the ZIP archive."
+            "Scientific limitations and report scope are always included. Missing optional analysis outputs are explicitly marked pending. Executive summaries are concise; full tables are in the ZIP archive."
         )
         generate = st.form_submit_button("Generate research report ↗", type="primary")
     current = fingerprint(d.root)
@@ -151,7 +151,7 @@ def methods(d):
         "Clustering and consensus": "K-Means, Ward and GMM are compared. Repeated consensus subsampling assesses pairwise co-clustering, and the saved exploratory k=3 partition supplies the downstream labels.",
         "Validation": "ARI measures agreement with known classes; silhouette measures separation. Gap uses the 1-SE rule. PAC measures ambiguous pair frequencies. Bootstrap Jaccard intervals describe resampling stability.",
         "Candidate probe discovery": "Cluster-versus-rest Mann-Whitney U tests are adjusted with BH-FDR. Median differences and rank-biserial effect sizes describe magnitude and direction. GPL80 maps selected strong probes to gene symbols.",
-        "Future interpretation": "Phase 7 will provide pathway enrichment with its background gene universe. Phase 8 will provide a surrogate classifier, evaluated fidelity and SHAP results. Neither establishes causal biology.",
+        "Biological interpretation": "Phase 7 provides pathway over-representation analysis. Subtype characterization combines sample composition, biomarker summaries, pathway results and cross-cluster comparisons. Optional surrogate-model and SHAP outputs are a separate analysis. These results do not establish causal biology.",
     }
     for title, text in stages.items():
         with st.expander(title):
