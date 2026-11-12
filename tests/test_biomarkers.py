@@ -190,3 +190,15 @@ def test_constant_gene_has_no_effect():
     assert gene_b["p_value"] == 1.0
     assert gene_b["median_difference"] == 0
     assert gene_b["rank_biserial"] == 0
+
+def test_recorded_strong_candidates_are_reproducible():
+    from pathlib import Path
+    from scripts.run_phase6_biomarkers import select_strong_candidates
+    root = Path(__file__).resolve().parents[1]
+    actual = select_strong_candidates(pd.read_csv(root / "reports/biomarkers/all_biomarker_results.csv"))
+    expected = pd.read_csv(root / "reports/biomarkers/strong_candidates.csv")
+    keys = ["cluster", "gene"]
+    pd.testing.assert_frame_equal(
+        actual.sort_values(keys).reset_index(drop=True),
+        expected.sort_values(keys).reset_index(drop=True),
+    )

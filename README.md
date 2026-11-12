@@ -10,14 +10,14 @@ The initial reference dataset is the **Golub et al. leukemia gene-expression dat
 
 ## Phase 9 — Molecular Discovery Explorer
 
-A cinematic molecular landing page leads into twelve research modules: dataset and preprocessing exploration, 2D/3D PCA, cluster discovery, validation, biomarkers, optional Phase 7/8 interpretation, comparisons, PDF/HTML reporting and reproducibility. The landing animation uses the published 1BNA DNA structure. Scientific values come from validated project artifacts.
+A cinematic molecular landing page leads into thirteen research modules: dataset and preprocessing exploration, 2D/3D PCA, cluster discovery, validation, biomarkers, Phase 7 pathways, Phase 8 subtype characterization, optional SHAP views, comparisons, PDF/HTML reporting and reproducibility. The landing animation uses the published 1BNA DNA structure. Scientific values come from validated project artifacts.
 
 ```sh
 python -m pip install -r requirements-app.txt
 python -m streamlit run app/streamlit_app.py
 ```
 
-See [PHASE9.md](PHASE9.md) for complete setup, contracts, limitations and deployment notes. Phase 7/8 analyses and the original consensus matrix are not fabricated when missing.
+For clean-checkout setup and analysis inputs, see [REPRODUCIBILITY.md](REPRODUCIBILITY.md). See [PHASE9.md](PHASE9.md) for complete setup, contracts, limitations and deployment notes. Phase 7/8 analyses and the original consensus matrix are not fabricated when missing.
 
 ## Overview
 
@@ -536,7 +536,7 @@ Independent datasets, biological validation, and domain expertise would be requi
 
 ## 6. Biomarker Discovery
 
-**Status: Phase 6 implementation and analysis completed — final Git commit and push pending**
+**Status: Implemented, with saved analysis outputs committed.**
 
 Phase 6 moves the project from cluster discovery toward biological interpretation.
 
@@ -1610,28 +1610,17 @@ Independent cohorts and biological validation would be required before these gen
 
 ## 7. Pathway Enrichment
 
-**Status: Planned**
+**Status: Implemented, with saved results.**
 
-Candidate biomarker genes will later be analyzed for biological pathway enrichment.
+`scripts/run_phase7_enrichment.py` performs background-aware over-representation analysis across KEGG, Reactome, Hallmark and GO Biological Process libraries. Saved results and metadata are in `reports/enrichment/`. See the detailed Phase 7 section below and [input setup instructions](REPRODUCIBILITY.md).
 
-Planned resources include:
+## 8. Subtype Characterization
 
-- KEGG
-- Reactome
-- Hallmark gene sets
-- Gene Ontology Biological Processes
+**Status: Implemented, with saved results.**
 
-The goal is to determine whether statistically identified marker genes correspond to coherent biological pathways.
+`src/interpretation/characterization.py` integrates cluster composition, biomarkers, pathway results and cross-cluster comparisons. The runner and outputs are described in the detailed Phase 8 section below.
 
----
-
-## 8. Explainability
-
-**Status: Planned**
-
-The project plans to use interpretable machine-learning methods to investigate which genes most strongly distinguish discovered clusters.
-
-A Random Forest surrogate model and SHAP-based interpretation are planned for this stage.
+Random Forest surrogate-model/SHAP explainability is a separate optional extension. It is not required for the completed subtype-characterization scope and has no saved model outputs yet.
 
 ---
 
@@ -1665,7 +1654,7 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 - [x] Consensus `k=3` evaluation
 - [x] Phase 5 integration on the real Golub dataset
 - [x] Phase 5 result export
-- [x] 80 automated tests passing
+- [x] Automated pipeline, application and reporting tests (see verification record)
 - [x] Phase 5 results committed and pushed to GitHub
 - [x] Biomarker module scaffold
 - [x] `statsmodels` dependency added
@@ -1674,9 +1663,9 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 - [x] Benjamini-Hochberg FDR correction
 - [x] Candidate biomarker ranking
 
-### In Progress
+### Application and optional extensions
 
-- [ ] PCA explained-variance analysis
+- [x] PCA explained-variance analysis
 - [x] PCA visualization
 - [ ] UMAP visualization
 - [x] Pathway enrichment
@@ -1690,211 +1679,16 @@ A Random Forest surrogate model and SHAP-based interpretation are planned for th
 
 ## Project Structure
 
-```text
-cancer-subtype-discovery/
-│
-├── app/
-│
-├── data/
-│   ├── raw/
-│   │   ├── golub_dataset.zip
-│   │   ├── golub_expr.csv
-│   │   └── golub_labels.csv
-│   │
-│   └── annotation/
-│       └── GPL80 annotation data/cache
-│
-├── logs/
-│
-├── models/
-│
-├── notebooks/
-│
-├── reports/
-│   ├── validation/
-│   │   ├── ari_silhouette_results.csv
-│   │   ├── bootstrap_results.csv
-│   │   ├── consensus_k3_clusters.csv
-│   │   ├── gap_results.csv
-│   │   └── pac_results.csv
-│   │
-│   └── biomarkers/
-│       ├── cluster_0_vs_rest.csv
-│       ├── cluster_1_vs_rest.csv
-│       ├── cluster_2_vs_rest.csv
-│       │
-│       ├── all_biomarker_results.csv
-│       ├── significant_biomarkers.csv
-│       ├── biomarker_summary.csv
-│       │
-│       ├── top20_candidates_per_cluster.csv
-│       ├── strong_candidates.csv
-│       ├── strong_candidates_annotated.csv
-│       │
-│       ├── top10_annotated_candidates_per_cluster.csv
-│       └── unmapped_strong_probes.csv
-│
-├── scripts/
-│   ├── run_phase5_validation.py
-│   ├── run_phase6_biomarkers.py
-│   ├── annotate_phase6_probes.py
-│   └── finalize_phase6_biomarkers.py
-│
-├── src/
-│   ├── biomarkers/
-│   │   ├── __init__.py
-│   │   └── core.py
-│   │
-│   ├── clustering/
-│   │   ├── __init__.py
-│   │   └── core.py
-│   │
-│   ├── data/
-│   │
-│   ├── dimensionality/
-│   │   ├── __init__.py
-│   │   └── core.py
-│   │
-│   ├── enrichment/
-│   │
-│   ├── explainability/
-│   │
-│   ├── pipeline/
-│   │
-│   ├── preprocessing/
-│   │   ├── __init__.py
-│   │   └── core.py
-│   │
-│   ├── reporting/
-│   │
-│   ├── utils/
-│   │
-│   ├── validation/
-│   │   ├── __init__.py
-│   │   └── core.py
-│   │
-│   ├── __init__.py
-│   ├── config.py
-│   ├── data_loader.py
-│   └── exceptions.py
-│
-├── templates/
-│
-├── tests/
-│   ├── test_biomarkers.py
-│   ├── test_clustering.py
-│   ├── test_data_loader.py
-│   ├── test_dimensionality.py
-│   ├── test_preprocessing.py
-│   └── test_validation.py
-│
-├── .gitignore
-├── config.yaml
-├── LICENSE
-├── README.md
-└── requirements.txt
-```
-
-### Structure by Phase
-
-```text
-Phase 1
-Data Loading & Validation
-        │
-        ├── src/data_loader.py
-        ├── src/exceptions.py
-        └── tests/test_data_loader.py
-
-
-Phase 2
-Preprocessing
-        │
-        ├── src/preprocessing/
-        └── tests/test_preprocessing.py
-
-
-Phase 3
-Dimensionality Reduction
-        │
-        ├── src/dimensionality/
-        └── tests/test_dimensionality.py
-
-
-Phase 4
-Clustering
-        │
-        ├── src/clustering/
-        └── tests/test_clustering.py
-
-
-Phase 5
-Cluster Validation
-        │
-        ├── src/validation/
-        ├── tests/test_validation.py
-        ├── scripts/run_phase5_validation.py
-        │
-        └── reports/validation/
-                │
-                ├── ari_silhouette_results.csv
-                ├── bootstrap_results.csv
-                ├── gap_results.csv
-                ├── pac_results.csv
-                └── consensus_k3_clusters.csv
-
-
-Phase 6
-Biomarker Discovery
-        │
-        ├── src/biomarkers/
-        │       │
-        │       ├── __init__.py
-        │       └── core.py
-        │
-        ├── tests/test_biomarkers.py
-        │
-        ├── scripts/
-        │       │
-        │       ├── run_phase6_biomarkers.py
-        │       ├── annotate_phase6_probes.py
-        │       └── finalize_phase6_biomarkers.py
-        │
-        └── reports/biomarkers/
-                │
-                ├── cluster_0_vs_rest.csv
-                ├── cluster_1_vs_rest.csv
-                ├── cluster_2_vs_rest.csv
-                ├── all_biomarker_results.csv
-                ├── significant_biomarkers.csv
-                ├── strong_candidates.csv
-                ├── strong_candidates_annotated.csv
-                ├── top10_annotated_candidates_per_cluster.csv
-                └── unmapped_strong_probes.csv
-
-
-Phase 7
-Pathway Enrichment
-        │
-        └── src/enrichment/
-              ⏳ Next Phase
-
-
-Phase 8
-Explainability
-        │
-        └── src/explainability/
-              ⏳ Planned
-
-
-Final Reporting / Application
-        │
-        ├── src/reporting/
-        ├── src/pipeline/
-        ├── app/
-        └── templates/
-              ⏳ Planned
-```
-
+- `src/data_loader.py`, `src/preprocessing/`, `src/dimensionality/`: input validation and preprocessing/PCA.
+- `src/clustering/`, `src/validation/`: clustering and validation methods.
+- `src/biomarkers/`, `src/annotation/`: candidate-marker statistics and probe annotation.
+- `scripts/run_phase7_enrichment.py`: pathway over-representation analysis.
+- `src/interpretation/`, `scripts/run_phase8_characterization.py`: integrated subtype characterization.
+- `src/reporting/`, `templates/`, `app/`: reports and saved-results dashboard.
+- `scripts/setup_reference_data.py`: offline reference restoration and optional enrichment downloads.
+- `reports/`: committed analysis outputs and presentation artifacts.
+- `tests/`: pipeline, application, reporting and reproducibility checks.
+- `data/`: ignored local inputs and caches; see [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
 
 ## Installation
 
@@ -1927,7 +1721,7 @@ pytest-cov
 ### Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Ritik-pixel28/cancer-subtype-discovery.git
 cd cancer-subtype-discovery
 ```
 
@@ -1954,12 +1748,15 @@ source .venv/bin/activate
 ### Install dependencies
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-test.txt
+python -m scripts.setup_reference_data
 ```
 
 ---
 
 ## Dataset Setup
+
+Run `python -m scripts.setup_reference_data` to restore the public reference CSVs offline from the bundled artifacts. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md) for checksums, enrichment inputs and historical limitations.
 
 The pipeline expects:
 
@@ -2061,11 +1858,7 @@ Current automated testing covers:
 - PAC candidate selection
 - Validation edge cases
 
-Current passing suite:
-
-```text
-80 passed
-```
+See [VERIFICATION.md](VERIFICATION.md) for the latest executed suite and its scope. Historical test totals should not be treated as current results.
 
 Tests are run before changes are pushed to the main branch.
 
@@ -2160,7 +1953,7 @@ Important limitations include:
 - External ARI agreement is modest
 - The exploratory consensus clusters have not been independently validated
 - No clinical conclusions should currently be drawn
-- Biomarker discovery and pathway interpretation are still under development
+- Biomarker discovery and pathway characterization are implemented, but require independent biological validation
 - Independent datasets will be required for meaningful biological validation
 
 The purpose of the current work is:
@@ -2194,20 +1987,20 @@ The purpose of the current work is:
 [x] Phase 5 real-data integration
 [x] Consensus k=3 exploratory partition
 [x] Phase 5 result export
-[x] 80-test regression suite
+[x] Pipeline and application regression suite
 [x] Biomarker discovery
 
-[ ] Mann-Whitney testing
-[ ] BH-FDR correction
-[ ] Candidate marker ranking
+[x] Mann-Whitney testing
+[x] BH-FDR correction
+[x] Candidate marker ranking
 [x] PCA visualization
 [ ] UMAP
-[ ] Pathway enrichment
-[ ] Biological interpretation
-[ ] Explainability / SHAP
+[x] Pathway enrichment
+[x] Biological interpretation
+[ ] Optional surrogate-model explainability / SHAP
 [x] Automated reporting (HTML/ZIP)
 [x] Streamlit application
-[ ] End-to-end pipeline
+[ ] Automated end-to-end production pipeline
 ```
 
 ---

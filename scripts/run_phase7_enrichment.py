@@ -190,8 +190,6 @@ def main() -> None:
         format="%(levelname)s: %(message)s",
     )
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     config = load_config()
     settings = config["enrichment"]
 
@@ -203,6 +201,20 @@ def main() -> None:
 
     if min_size < 1 or max_size < min_size:
         raise ValueError("Invalid pathway-size limits in config.yaml.")
+
+    # Fail before replacing any recorded results when resources are missing.
+    missing_inputs = [path for path in [BIOMARKER_FILE, *[GENE_SET_DIR / f"{library}.gmt" for library in libraries]] if not path.is_file()]
+    if missing_inputs:
+        raise FileNotFoundError(
+            "Required Phase 7 inputs missing: "
+            + ", ".join(str(path) for path in missing_inputs)
+            + ". Run python -m scripts.setup_reference_data --download-enrichment "
+            "for reference resources; see REPRODUCIBILITY.md for historical limitations."
+        )
+    # Parse all GMT inputs before writing any output, including mapping summaries.
+    loaded_libraries = {
+        library: load_gmt(GENE_SET_DIR / f"{library}.gmt") for library in libraries
+    }
 
     LOGGER.info("Loading Phase 6 biomarker results...")
     biomarkers = pd.read_csv(BIOMARKER_FILE)
@@ -258,6 +270,7 @@ def main() -> None:
     ] = "ambiguous"
     universe.loc[universe["is_control"], "mapping_status"] = "control"
 
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     universe.to_csv(
         OUTPUT_DIR / "annotated_tested_probe_universe.csv",
         index=False,
@@ -299,17 +312,8 @@ def main() -> None:
         encoding="utf-8",
     )
 
-    LOGGER.info("Loading local gene-set libraries...")
-    loaded_libraries: dict[str, dict[str, set[str]]] = {}
-
-    for library in libraries:
-        path = GENE_SET_DIR / f"{library}.gmt"
-        loaded_libraries[library] = load_gmt(path)
-        LOGGER.info(
-            "%s: loaded %d gene sets",
-            library,
-            len(loaded_libraries[library]),
-        )
+    for library, gene_sets in loaded_libraries.items():
+        LOGGER.info("%s: loaded %d gene sets", library, len(gene_sets))
 
     # Map every tested probe to its usable symbols once.
     probe_to_symbols = dict(

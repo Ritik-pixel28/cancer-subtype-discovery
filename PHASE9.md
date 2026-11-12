@@ -28,9 +28,9 @@ python -m streamlit run app/streamlit_app.py
 
 The historical `requirements.txt` remains the upstream pipeline environment. `requirements-app.txt` pins the tested application runtime, while `requirements-test.txt` adds test dependencies.
 
-The entry page is the molecular landing experience. Choose **Enter explorer** to enter the analytical workspace. The section selector exposes all twelve modules. Focus cluster persists across in-session navigation; global gene search opens Biomarkers. The original header links and immediate tab switching are restored. The section selector retains filters within the current session; header links open a new session.
+The entry page is the molecular landing experience. Choose **Enter explorer** to enter the analytical workspace. The section selector exposes all thirteen modules. Focus cluster persists across in-session navigation; global gene search opens Biomarkers. The original header links and immediate tab switching are restored. The section selector retains filters within the current session; header links open a new session.
 
-## Twelve research modules
+## Thirteen research modules
 
 1. **Research overview:** validated sample/probe/component/candidate counts, cluster composition, PCA and navigable method stages.
 2. **Dataset explorer:** probe selector, literal sample search, expression preview, filtered CSV, descriptive statistics, true quality checks, original expression histogram, sample distributions, known-label composition.
@@ -39,11 +39,13 @@ The entry page is the molecular landing experience. Choose **Enter explorer** to
 5. **Cluster discovery:** sample lookup, cluster sizes, nearest samples by Euclidean distance in the saved 30-PC representation, ordered standardized-expression heatmaps, and algorithm comparison by k.
 6. **Validation:** ARI/silhouette curves, Gap with calculated 1-SE selection, PAC minimum, empirical bootstrap intervals, and a validated optional consensus-matrix reader.
 7. **Biomarkers:** all 6,000 probe-cluster tests or strong candidates, literal gene/probe search, cluster/FDR/effect/direction/annotation filters, significance-versus-effect plots, raw-expression boxplots, and deduplicated probe/gene overlap tables.
-8. **Pathways:** pending without Phase 7 artifacts; filters, dot plots, overlap details and method/background metadata when supplied.
-9. **Explainability:** pending without Phase 8 artifacts; global importance, per-sample contributions, feature-value coloring, model metadata, separately displayed surrogate predictions and consensus assignments, and evaluated fidelity/confusion matrices when supplied.
+8. **Pathways:** reads the committed native Phase 7 outputs, with filters, dot plots, overlap details and method/background metadata.
+9. **Explainability (optional extension):** pending without surrogate-model/SHAP artifacts; global importance, per-sample contributions, feature-value coloring, model metadata, separately displayed surrogate predictions and consensus assignments, and evaluated fidelity/confusion matrices when supplied.
 10. **Comparisons:** cluster summaries, shared mapped genes, PCA, specific probe expression distributions/scatterplots, exploratory Spearman correlation, optional pathway/importance comparisons, and JSON configuration export.
 11. **Reports:** executive, full technical and cluster-specific PDF/HTML reports, selectable sections, CSVs, PNG/SVG figures, provenance JSON and ZIP bundle.
 12. **Methods:** readable method explanations, actual YAML configuration, software versions, code version and working-tree state, artifact SHA-256 checksums, status and limitations.
+
+13. **Subtype Characterization:** reads the committed Phase 8 summaries, cross-cluster comparisons and six figures. This is separate from optional SHAP explainability.
 
 ## Data and artifact preparation
 
@@ -74,7 +76,7 @@ Optional: `raw_p_value`, `pathway_size`, `enrichment_score`.
 
 `reports/enrichment/metadata.json` should record `method`, `enrichment_measure`, `database_version`, `background_gene_universe`, `gene_identifier_type`, `annotation_strategy`, `analysis_date` and `software_versions`. The chart names the supplied measure; without an enrichment score it explicitly plots -log10(adjusted p-value).
 
-## Phase 8 contract
+## Optional surrogate-model/SHAP contract (separate from Phase 8)
 
 - `reports/explainability/global_importance.csv`: `cluster`, `feature_id`, `mean_abs_shap`; optional `gene_symbol`, `rank`.
 - `reports/explainability/sample_explanations.csv`: `sample_id`, `target_cluster`, `feature_id`, `shap_value`, `feature_value`.
@@ -95,10 +97,11 @@ Plotly charts provide PNG exports, interactive HTML downloads and an SVG export 
 
 ```sh
 python -m pip install -r requirements-test.txt
+python -m scripts.setup_reference_data
 python -m pytest -q
 ```
 
-Verification: 125 automated tests passed on the rebuilt application.
+Historical application-build verification: 125 tests passed at that revision. See [VERIFICATION.md](VERIFICATION.md) for the current executed suite and [REPRODUCIBILITY.md](REPRODUCIBILITY.md) for clean-checkout setup.
 
 Coverage includes existing pipeline tests plus every application section, gene filters and empty states, 3D PCA, raw-data alignment, standardization, malformed schemas, optional-phase contracts, selected report scope, actual PDF generation and source/export checksums. Browser checks additionally cover the molecular renderer, pause button, landing navigation, search, downloads, and responsive layout. Generated PDFs are rendered and visually inspected.
 
@@ -137,4 +140,4 @@ From the repository folder, run `python run.py`. This selects the complete proje
 
 Compatibility checks cover Streamlit 1.51 (the Anaconda version shown in the reported traceback) and the pinned 1.65 environment. The old installation was tested in an isolated environment with report dependencies added; the global Anaconda installation was not changed. Figure downloads pass binary bytes on both versions. Overview statistics use equal-width columns in both rows, and the research navigation cards are laid out in sequential rows.
 
-Latest verification: 33 application/service checks passed under Streamlit 1.51 and again under 1.65. Browser checks confirmed chart HTML download, visible charts, and aligned layouts at 1440px and 700px widths.
+Historical compatibility verification: 33 application/service checks passed under Streamlit 1.51 and again under 1.65. Browser checks confirmed chart HTML download, visible charts, and aligned layouts at 1440px and 700px widths.
