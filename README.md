@@ -19,6 +19,33 @@ python -m streamlit run app/streamlit_app.py
 
 For clean-checkout setup and analysis inputs, see [REPRODUCIBILITY.md](REPRODUCIBILITY.md). See [PHASE9.md](PHASE9.md) for complete setup, contracts, limitations and deployment notes. Phase 7/8 analyses and the original consensus matrix are not fabricated when missing.
 
+---
+
+## Vercel Production Deployment & Research API
+
+The project is configured for cloud deployment on **Vercel** via a serverless **FastAPI backend** (`api/index.py`) and a responsive **research dashboard** (`frontend/index.html` / `public/index.html`).
+
+### Architecture & Capabilities
+- **Backend:** Decoupled FastAPI serverless function mounted at `/api/*`, reading directly from immutable research artifacts (`reports/`).
+- **Frontend:** Responsive client-side research dashboard rendered with Plotly.js, featuring 12 interactive research sections (Overview, Dataset, Preprocessing, PCA, Clusters, Validation, Biomarkers, Pathways, Explainability, Compare, Reports, Methods).
+- **Zero Reruns:** Directly loads validated analytical artifacts (72 leukemia samples, 30-component PCA, Consensus $k=3$ clusters, Benjamini-Hochberg FDR biomarkers, ORA pathway enrichment, Phase 8 characterization summaries).
+- **Scientific Integrity:** Strictly communicates research scope. No clinical diagnosis or patient classification is claimed (see ML Model Audit in [DEPLOYMENT.md](DEPLOYMENT.md)).
+
+### Quick Start (Local & Vercel)
+```sh
+# Run FastAPI server locally
+uvicorn api.index:app --reload --port 8000
+
+# Run all 156 tests (existing pipeline + API integration suite)
+pytest -q
+
+# Deploy to Vercel
+vercel --prod
+```
+For complete deployment steps, Vercel routing configuration, and architectural details, refer to:
+- [DEPLOYMENT.md](DEPLOYMENT.md) — Step-by-step Vercel deployment guide
+- [ARCHITECTURE.md](ARCHITECTURE.md) — Detailed technical architecture and bundle specifications
+
 ## Overview
 
 The goal of this project is to build an end-to-end and reproducible pipeline for discovering, validating, and biologically interpreting molecular subgroups from gene-expression data.
