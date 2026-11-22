@@ -1,0 +1,37 @@
+# Python virtual environment (installed by Vercel from requirements)
+.venv/
+venv/
+env/
+
+# Git metadata
+.git/
+
+# Raw dataset files not needed at runtime (preprocessed into reports/app/)
+data/raw/
+data/annotation/
+
+# Heavy full ORA results table (significant results table is used by API)
+reports/enrichment/enrichment_all_results.csv
+
+# Development caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache/
+htmlcov/
+.coverage
+
+# Pipeline research execution scripts (not needed for web serving)
+notebooks/
+logs/
+models/
+scripts/
+
+# Streamlit-only configuration
+.streamlit/
+
+# Test files (tested locally and in CI, not needed in production lambda)
+tests/
