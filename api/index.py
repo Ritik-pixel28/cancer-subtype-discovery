@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from functools import lru_cache
 
 DISCLAIMER = (
@@ -428,3 +429,12 @@ def methods():
             "This application does not perform clinical diagnosis or predict patient outcomes",
         ],
     }
+
+
+# ---------------------------------------------------------------------------
+# Static frontend mounting (serves responsive dashboard from frontend/)
+# ---------------------------------------------------------------------------
+
+frontend_dir = ROOT / "frontend"
+if frontend_dir.is_dir():
+    app.mount("/", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")

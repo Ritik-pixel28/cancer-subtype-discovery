@@ -480,9 +480,11 @@ function currentSection() {
 }
 
 // ---- API ----
+const API_BASE = window.API_BASE || '/api/';
 async function api(path) {
-  const res = await fetch('/api/' + path);
-  if (!res.ok) throw new Error('API error ' + res.status + ' for /api/' + path);
+  const url = API_BASE.endsWith('/') ? API_BASE + path : API_BASE + '/' + path;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('API error ' + res.status + ' for ' + url);
   return res.json();
 }
 

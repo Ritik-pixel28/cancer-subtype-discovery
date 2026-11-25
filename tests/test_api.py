@@ -224,3 +224,35 @@ def test_invalid_query_parameters():
     # FDR out of range [0, 1]
     res_bad_fdr = client.get("/api/biomarkers?max_fdr=5.0")
     assert res_bad_fdr.status_code == 422
+
+
+def test_static_frontend_root():
+    """Verify that root URL / serves the responsive frontend HTML."""
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("content-type", "")
+    assert "<!DOCTYPE html>" in response.text
+    assert "Cancer Subtype Discovery" in response.text
+    assert "MOLECULAR DISCOVERY" in response.text
+
+
+def test_static_frontend_index_html():
+    """Verify that /index.html serves the static frontend HTML directly."""
+    response = client.get("/index.html")
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("content-type", "")
+    assert "Cancer Subtype Discovery" in response.text
+
+
+def test_static_mount_does_not_mask_api_routes():
+    """Ensure static files mount does not intercept or mask /api/* endpoints."""
+    # API route returns JSON
+    res_api = client.get("/api/health")
+    assert res_api.status_code == 200
+    assert "application/json" in res_api.headers.get("content-type", "")
+    assert res_api.json()["status"] == "ok"
+
+    # Root returns HTML
+    res_root = client.get("/")
+    assert res_root.status_code == 200
+    assert "text/html" in res_root.headers.get("content-type", "")
